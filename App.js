@@ -1,9 +1,13 @@
 /**
- * تطبيق عداد الأذكار والتسبيح
- * Dhikr Counter Application
+ * تطبيق عداد الأذكار والتسبيح - محسّن
+ * Enhanced Dhikr Counter Application
  * 
- * هذا التطبيق يسمح للمستخدم بعد الأذكار والتسبيحات المختلفة
- * مع حفظ البيانات محلياً واسترجاعها عند فتح التطبيق
+ * Features:
+ * - Multi-language support (Arabic, English, Thai)
+ * - Beautiful selection UI
+ * - Separate statistics page
+ * - SweetAlert2 integration
+ * - Smooth animations
  */
 
 import React, {useState, useEffect, useRef} from 'react';
@@ -13,55 +17,48 @@ import {
   View,
   TouchableOpacity,
   ScrollView,
-  Alert,
-  I18nManager,
   StatusBar,
   Animated,
   Dimensions,
   Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {Picker} from '@react-native-picker/picker';
-
-// تفعيل اتجاه RTL للغة العربية
-I18nManager.forceRTL(true);
-I18nManager.allowRTL(true);
+import Swal from 'sweetalert2';
+import {TRANSLATIONS, ADHKAR_KEYS, LANGUAGES} from './languages';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
-
-// قائمة الأذكار المتاحة
-const ADHKAR_LIST = [
-  'سبحان الله',
-  'الحمد لله',
-  'الله أكبر',
-  'لا إله إلا الله',
-  'أستغفر الله',
-  'لا حول ولا قوة إلا بالله',
-];
 
 // مفاتيح التخزين المحلي
 const STORAGE_KEY_TOTALS = '@dhikr_counter_totals';
 const STORAGE_KEY_CURRENT = '@dhikr_counter_current';
 const STORAGE_KEY_SELECTED = '@dhikr_counter_selected';
+const STORAGE_KEY_LANGUAGE = '@dhikr_counter_language';
 
 const App = () => {
-  // الذكر المختار حالياً
-  const [selectedDhikr, setSelectedDhikr] = useState(ADHKAR_LIST[0]);
+  // Language state
+  const [language, setLanguage] = useState('ar');
+  const [isRTL, setIsRTL] = useState(true);
   
-  // إجمالي العدد لكل ذكر - كائن يحتوي على كل الأذكار وأعدادها
+  // View state
+  const [currentView, setCurrentView] = useState('counter'); // 'counter' or 'statistics'
+  
+  // الذكر المختار حالياً
+  const [selectedDhikr, setSelectedDhikr] = useState(ADHKAR_KEYS[0]);
+  
+  // إجمالي العدد لكل ذكر
   const [totalCounts, setTotalCounts] = useState(() => {
     const initial = {};
-    ADHKAR_LIST.forEach(dhikr => {
-      initial[dhikr] = 0;
+    ADHKAR_KEYS.forEach(key => {
+      initial[key] = 0;
     });
     return initial;
   });
   
-  // العداد الحالي لكل ذكر - يحفظ العداد الحالي لكل ذكر على حدة
+  // العداد الحالي لكل ذكر
   const [currentCounts, setCurrentCounts] = useState(() => {
     const initial = {};
-    ADHKAR_LIST.forEach(dhikr => {
-      initial[dhikr] = 0;
+    ADHKAR_KEYS.forEach(key => {
+      initial[key] = 0;
     });
     return initial;
   });
@@ -74,6 +71,9 @@ const App = () => {
   const counterScaleAnim = useRef(new Animated.Value(1)).current;
   const buttonScaleAnim = useRef(new Animated.Value(1)).current;
   const rippleAnim = useRef(new Animated.Value(0)).current;
+
+  // Get translations
+  const t = TRANSLATIONS[language] || TRANSLATIONS.ar;
 
   /**
    * تحميل البيانات المحفوظة عند بدء التطبيق
@@ -101,6 +101,14 @@ const App = () => {
   useEffect(() => {
     saveSelectedDhikr();
   }, [selectedDhikr]);
+  
+  /**
+   * حفظ اللغة المختارة
+   */
+  useEffect(() => {
+    saveLanguage();
+    setIsRTL(LANGUAGES[language]?.dir === 'rtl');
+  }, [language]);
 
   /**
    * تحميل البيانات من التخزين المحلي
@@ -125,13 +133,21 @@ const App = () => {
       const selectedJson = await AsyncStorage.getItem(STORAGE_KEY_SELECTED);
       if (selectedJson != null) {
         const loadedSelected = JSON.parse(selectedJson);
-        if (ADHKAR_LIST.includes(loadedSelected)) {
+        if (ADHKAR_KEYS.includes(loadedSelected)) {
           setSelectedDhikr(loadedSelected);
+        }
+      }
+      
+      // تحميل اللغة
+      const languageJson = await AsyncStorage.getItem(STORAGE_KEY_LANGUAGE);
+      if (languageJson != null) {
+        const loadedLanguage = JSON.parse(languageJson);
+        if (LANGUAGES[loadedLanguage]) {
+          setLanguage(loadedLanguage);
         }
       }
     } catch (error) {
       console.error('خطأ في تحميل البيانات:', error);
-      Alert.alert('خطأ', 'حدث خطأ أثناء تحميل البيانات المحفوظة');
     }
   };
 
@@ -140,13 +156,8 @@ const App = () => {
    */
   const saveData = async () => {
     try {
-      // حفظ الإجماليات
-      const totalsJson = JSON.stringify(totalCounts);
-      await AsyncStorage.setItem(STORAGE_KEY_TOTALS, totalsJson);
-      
-      // حفظ العدادات الحالية
-      const currentJson = JSON.stringify(currentCounts);
-      await AsyncStorage.setItem(STORAGE_KEY_CURRENT, currentJson);
+      await AsyncStorage.setItem(STORAGE_KEY_TOTALS, JSON.stringify(totalCounts));
+      await AsyncStorage.setItem(STORAGE_KEY_CURRENT, JSON.stringify(currentCounts));
     } catch (error) {
       console.error('خطأ في حفظ البيانات:', error);
     }
@@ -157,10 +168,20 @@ const App = () => {
    */
   const saveSelectedDhikr = async () => {
     try {
-      const jsonValue = JSON.stringify(selectedDhikr);
-      await AsyncStorage.setItem(STORAGE_KEY_SELECTED, jsonValue);
+      await AsyncStorage.setItem(STORAGE_KEY_SELECTED, JSON.stringify(selectedDhikr));
     } catch (error) {
       console.error('خطأ في حفظ الذكر المختار:', error);
+    }
+  };
+  
+  /**
+   * حفظ اللغة
+   */
+  const saveLanguage = async () => {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY_LANGUAGE, JSON.stringify(language));
+    } catch (error) {
+      console.error('خطأ في حفظ اللغة:', error);
     }
   };
 
@@ -221,109 +242,87 @@ const App = () => {
    * إعادة تعيين العداد الحالي فقط للذكر المحدد
    */
   const resetCurrentCounter = () => {
-    // For web compatibility, use window.confirm instead of Alert.alert
-    if (typeof window !== 'undefined' && window.confirm) {
-      const confirmed = window.confirm('هل تريد إعادة تعيين العداد الحالي لـ ' + selectedDhikr + '؟');
-      if (confirmed) {
+    Swal.fire({
+      title: t.resetTitle,
+      text: `${t.resetMessage} ${t[selectedDhikr]}?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#ff9800',
+      cancelButtonColor: '#999',
+      confirmButtonText: t.resetConfirm,
+      cancelButtonText: t.cancel,
+      reverseButtons: isRTL,
+    }).then((result) => {
+      if (result.isConfirmed) {
         setCurrentCounts(prevCounts => ({
           ...prevCounts,
           [selectedDhikr]: 0,
         }));
       }
-    } else {
-      // Fallback for React Native
-      Alert.alert(
-        'إعادة تعيين العداد',
-        'هل تريد إعادة تعيين العداد الحالي لـ ' + selectedDhikr + '؟',
-        [
-          {
-            text: 'إلغاء',
-            style: 'cancel',
-          },
-          {
-            text: 'إعادة تعيين',
-            onPress: () => {
-              setCurrentCounts(prevCounts => ({
-                ...prevCounts,
-                [selectedDhikr]: 0,
-              }));
-            },
-            style: 'destructive',
-          },
-        ],
-      );
-    }
+    });
   };
 
   /**
    * مسح جميع البيانات المحفوظة
    */
   const clearAllData = () => {
-    // For web compatibility
-    if (typeof window !== 'undefined' && window.confirm) {
-      const confirmed = window.confirm('هل أنت متأكد من مسح جميع البيانات المحفوظة؟ لا يمكن التراجع عن هذا الإجراء.');
-      if (confirmed) {
+    Swal.fire({
+      title: t.clearTitle,
+      text: t.clearMessage,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#e53935',
+      cancelButtonColor: '#999',
+      confirmButtonText: t.clearConfirm,
+      cancelButtonText: t.cancel,
+      reverseButtons: isRTL,
+    }).then((result) => {
+      if (result.isConfirmed) {
         const resetCounts = {};
-        ADHKAR_LIST.forEach(dhikr => {
-          resetCounts[dhikr] = 0;
+        ADHKAR_KEYS.forEach(key => {
+          resetCounts[key] = 0;
         });
         setTotalCounts(resetCounts);
         setCurrentCounts(resetCounts);
-        window.alert('تم مسح جميع البيانات بنجاح');
+        
+        Swal.fire({
+          title: t.success,
+          text: t.dataCleared,
+          icon: 'success',
+          confirmButtonColor: '#0a7e8c',
+          timer: 2000,
+        });
       }
-    } else {
-      // Fallback for React Native
-      Alert.alert(
-        'مسح جميع البيانات',
-        'هل أنت متأكد من مسح جميع البيانات المحفوظة؟ لا يمكن التراجع عن هذا الإجراء.',
-        [
-          {
-            text: 'إلغاء',
-            style: 'cancel',
-          },
-          {
-            text: 'مسح الكل',
-            onPress: () => {
-              const resetCounts = {};
-              ADHKAR_LIST.forEach(dhikr => {
-                resetCounts[dhikr] = 0;
-              });
-              setTotalCounts(resetCounts);
-              setCurrentCounts(resetCounts);
-              Alert.alert('تم', 'تم مسح جميع البيانات بنجاح');
-            },
-            style: 'destructive',
-          },
-        ],
-      );
-    }
+    });
   };
 
   /**
    * تغيير الذكر المختار
    */
-  const handleDhikrChange = (dhikr) => {
-    setSelectedDhikr(dhikr);
-    // لا حاجة لإعادة تعيين العداد - كل ذكر يحفظ عداده الخاص
+  const handleDhikrChange = (dhikrKey) => {
+    setSelectedDhikr(dhikrKey);
+  };
+
+  /**
+   * Change language
+   */
+  const changeLanguage = (lang) => {
+    setLanguage(lang);
   };
 
   /**
    * حساب إحصائيات الأذكار
    */
   const calculateStatistics = () => {
-    // إجمالي جميع الأذكار
     const totalAll = Object.values(totalCounts).reduce((sum, count) => sum + count, 0);
-    
-    // إجمالي العدادات الحالية
     const currentAll = Object.values(currentCounts).reduce((sum, count) => sum + count, 0);
     
-    // الذكر الأكثر استخداماً
-    let mostUsedDhikr = ADHKAR_LIST[0];
+    let mostUsedDhikr = ADHKAR_KEYS[0];
     let maxCount = totalCounts[mostUsedDhikr] || 0;
-    ADHKAR_LIST.forEach(dhikr => {
-      if ((totalCounts[dhikr] || 0) > maxCount) {
-        maxCount = totalCounts[dhikr] || 0;
-        mostUsedDhikr = dhikr;
+    ADHKAR_KEYS.forEach(key => {
+      if ((totalCounts[key] || 0) > maxCount) {
+        maxCount = totalCounts[key] || 0;
+        mostUsedDhikr = key;
       }
     });
     
@@ -347,150 +346,280 @@ const App = () => {
     outputRange: [0.6, 0.3, 0],
   });
 
+  /**
+   * Render language selector
+   */
+  const renderLanguageSelector = () => (
+    <View style={styles.languageSelector}>
+      {Object.values(LANGUAGES).map((lang) => (
+        <TouchableOpacity
+          key={lang.code}
+          style={[
+            styles.languageButton,
+            language === lang.code && styles.languageButtonActive,
+          ]}
+          onPress={() => changeLanguage(lang.code)}
+          activeOpacity={0.7}
+        >
+          <Text
+            style={[
+              styles.languageButtonText,
+              language === lang.code && styles.languageButtonTextActive,
+            ]}
+          >
+            {lang.name}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+
+  /**
+   * Render prettier dhikr selection
+   */
+  const renderDhikrSelection = () => (
+    <Animated.View style={[styles.selectionContainer, {opacity: fadeAnim}]}>
+      <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>
+        📿 {t.selectDhikr}
+      </Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.dhikrScrollContainer}
+      >
+        {ADHKAR_KEYS.map((key) => (
+          <TouchableOpacity
+            key={key}
+            style={[
+              styles.dhikrCard,
+              selectedDhikr === key && styles.dhikrCardActive,
+            ]}
+            onPress={() => handleDhikrChange(key)}
+            activeOpacity={0.7}
+          >
+            <Text
+              style={[
+                styles.dhikrCardText,
+                selectedDhikr === key && styles.dhikrCardTextActive,
+                isRTL && styles.textRTL,
+              ]}
+              numberOfLines={2}
+            >
+              {t[key]}
+            </Text>
+            {selectedDhikr === key && (
+              <View style={styles.dhikrCardCheck}>
+                <Text style={styles.dhikrCardCheckIcon}>✓</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </Animated.View>
+  );
+
+  /**
+   * Render counter view
+   */
+  const renderCounterView = () => (
+    <ScrollView 
+      style={styles.scrollView}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Language Selector */}
+      {renderLanguageSelector()}
+      
+      {/* Dhikr Selection */}
+      {renderDhikrSelection()}
+
+      {/* عرض الذكر المختار */}
+      <Animated.View style={[styles.dhikrDisplayContainer, {opacity: fadeAnim, transform: [{scale: fadeAnim}]}]}>
+        <Text style={[styles.dhikrText, isRTL && styles.textRTL]}>
+          🌙 {t[selectedDhikr]} 🌙
+        </Text>
+      </Animated.View>
+
+      {/* العداد الحالي */}
+      <Animated.View style={[styles.counterContainer, {opacity: fadeAnim, transform: [{scale: counterScaleAnim}]}]}>
+        <Text style={[styles.counterLabel, isRTL && styles.textRTL]}>
+          {t.currentCount}
+        </Text>
+        <Animated.Text style={styles.counterValue}>{currentCount}</Animated.Text>
+      </Animated.View>
+
+      {/* زر العد الرئيسي */}
+      <Animated.View style={{transform: [{scale: buttonScaleAnim}]}}>
+        <TouchableOpacity
+          style={styles.mainButton}
+          onPress={incrementCounter}
+          activeOpacity={0.8}
+        >
+          <Animated.View style={[
+            styles.rippleCircle,
+            {
+              transform: [{scale: rippleScale}],
+              opacity: rippleOpacity,
+            },
+          ]} />
+          <Text style={[styles.mainButtonText, isRTL && styles.textRTL]}>
+            {t.mainButton} ✨
+          </Text>
+          <Text style={[styles.mainButtonSubtext, isRTL && styles.textRTL]}>
+            {t.mainButtonSub}
+          </Text>
+        </TouchableOpacity>
+      </Animated.View>
+
+      {/* أزرار التحكم */}
+      <Animated.View style={[styles.controlButtons, {opacity: fadeAnim}]}>
+        <TouchableOpacity
+          style={styles.resetButton}
+          onPress={resetCurrentCounter}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.resetButtonText, isRTL && styles.textRTL]}>
+            🔄 {t.resetCounter}
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={styles.statsButton}
+          onPress={() => setCurrentView('statistics')}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.statsButtonText, isRTL && styles.textRTL]}>
+            📊 {t.viewStatistics}
+          </Text>
+        </TouchableOpacity>
+      </Animated.View>
+
+      {/* زر مسح البيانات */}
+      <Animated.View style={{opacity: fadeAnim}}>
+        <TouchableOpacity
+          style={styles.clearButton}
+          onPress={clearAllData}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.clearButtonText, isRTL && styles.textRTL]}>
+            🗑️ {t.clearAllData}
+          </Text>
+        </TouchableOpacity>
+      </Animated.View>
+
+      <View style={styles.bottomSpacing} />
+    </ScrollView>
+  );
+
+  /**
+   * Render statistics view
+   */
+  const renderStatisticsView = () => (
+    <ScrollView 
+      style={styles.scrollView}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Back button */}
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => setCurrentView('counter')}
+        activeOpacity={0.8}
+      >
+        <Text style={[styles.backButtonText, isRTL && styles.textRTL]}>
+          {isRTL ? '→' : '←'} {t.backToCounter}
+        </Text>
+      </TouchableOpacity>
+
+      {/* قسم الإحصائيات */}
+      <View style={styles.statisticsContainer}>
+        <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>
+          📊 {t.statistics}
+        </Text>
+        
+        <View style={styles.statsGrid}>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{stats.totalAll}</Text>
+            <Text style={[styles.statLabel, isRTL && styles.textRTL]}>
+              {t.totalAll}
+            </Text>
+          </View>
+          
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{stats.currentAll}</Text>
+            <Text style={[styles.statLabel, isRTL && styles.textRTL]}>
+              {t.currentSession}
+            </Text>
+          </View>
+        </View>
+        
+        {stats.maxCount > 0 && (
+          <View style={styles.mostUsedCard}>
+            <Text style={[styles.mostUsedLabel, isRTL && styles.textRTL]}>
+              🏆 {t.mostUsed}
+            </Text>
+            <Text style={[styles.mostUsedDhikr, isRTL && styles.textRTL]}>
+              {t[stats.mostUsedDhikr]}
+            </Text>
+            <Text style={[styles.mostUsedCount, isRTL && styles.textRTL]}>
+              {stats.maxCount} {t.times}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* عرض الإجماليات */}
+      <View style={styles.totalsContainer}>
+        <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>
+          💾 {t.savedTotals}
+        </Text>
+        {ADHKAR_KEYS.map((key, index) => {
+          const total = totalCounts[key] || 0;
+          const current = currentCounts[key] || 0;
+          const percentage = stats.totalAll > 0 ? Math.round((total / stats.totalAll) * 100) : 0;
+          
+          return (
+            <View key={index} style={styles.totalItem}>
+              <View style={styles.totalItemLeft}>
+                <Text style={[styles.totalDhikrName, isRTL && styles.textRTL]}>
+                  {t[key]}
+                </Text>
+                <Text style={[styles.currentCountText, isRTL && styles.textRTL]}>
+                  {t.session}: {current}
+                </Text>
+              </View>
+              <View style={styles.totalItemRight}>
+                <View style={styles.totalCountBadge}>
+                  <Text style={styles.totalCountText}>{total}</Text>
+                </View>
+                {percentage > 0 && (
+                  <Text style={styles.percentageText}>{percentage}%</Text>
+                )}
+              </View>
+            </View>
+          );
+        })}
+      </View>
+
+      <View style={styles.bottomSpacing} />
+    </ScrollView>
+  );
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0a5f5f" />
       
       {/* شريط العنوان */}
       <Animated.View style={[styles.header, {opacity: fadeAnim}]}>
-        <Text style={styles.headerTitle}>✨ عداد الأذكار والتسبيح</Text>
-        <Text style={styles.headerSubtitle}>احفظ أورادك اليومية بسهولة</Text>
+        <Text style={[styles.headerTitle, isRTL && styles.textRTL]}>
+          ✨ {t.appTitle}
+        </Text>
+        <Text style={[styles.headerSubtitle, isRTL && styles.textRTL]}>
+          {t.appSubtitle}
+        </Text>
       </Animated.View>
 
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* قسم اختيار الذكر */}
-        <Animated.View style={[styles.pickerContainer, {opacity: fadeAnim, transform: [{translateY: fadeAnim.interpolate({inputRange: [0, 1], outputRange: [20, 0]})}]}]}>
-          <Text style={styles.sectionTitle}>📿 اختر نوع الذكر</Text>
-          <View style={styles.pickerWrapper}>
-            <Picker
-              selectedValue={selectedDhikr}
-              onValueChange={handleDhikrChange}
-              style={styles.picker}
-              itemStyle={styles.pickerItem}
-            >
-              {ADHKAR_LIST.map((dhikr, index) => (
-                <Picker.Item 
-                  key={index} 
-                  label={dhikr} 
-                  value={dhikr}
-                  style={styles.pickerItemText}
-                />
-              ))}
-            </Picker>
-          </View>
-        </Animated.View>
-
-        {/* عرض الذكر المختار */}
-        <Animated.View style={[styles.dhikrDisplayContainer, {opacity: fadeAnim, transform: [{scale: fadeAnim}]}]}>
-          <Text style={styles.dhikrText}>🌙 {selectedDhikr} 🌙</Text>
-        </Animated.View>
-
-        {/* العداد الحالي */}
-        <Animated.View style={[styles.counterContainer, {opacity: fadeAnim, transform: [{scale: counterScaleAnim}]}]}>
-          <Text style={styles.counterLabel}>العدد الحالي</Text>
-          <Animated.Text style={styles.counterValue}>{currentCount}</Animated.Text>
-        </Animated.View>
-
-        {/* زر العد الرئيسي */}
-        <Animated.View style={{transform: [{scale: buttonScaleAnim}]}}>
-          <TouchableOpacity
-            style={styles.mainButton}
-            onPress={incrementCounter}
-            activeOpacity={0.8}
-          >
-            <Animated.View style={[
-              styles.rippleCircle,
-              {
-                transform: [{scale: rippleScale}],
-                opacity: rippleOpacity,
-              },
-            ]} />
-            <Text style={styles.mainButtonText}>سَبِّح ✨</Text>
-            <Text style={styles.mainButtonSubtext}>اضغط للعد</Text>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* أزرار التحكم */}
-        <Animated.View style={[styles.controlButtons, {opacity: fadeAnim}]}>
-          <TouchableOpacity
-            style={styles.resetButton}
-            onPress={resetCurrentCounter}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.resetButtonText}>🔄 إعادة تعيين العداد</Text>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* قسم الإحصائيات */}
-        <Animated.View style={[styles.statisticsContainer, {opacity: fadeAnim, transform: [{translateY: fadeAnim.interpolate({inputRange: [0, 1], outputRange: [30, 0]})}]}]}>
-          <Text style={styles.sectionTitle}>📊 الإحصائيات</Text>
-          
-          <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>{stats.totalAll}</Text>
-              <Text style={styles.statLabel}>إجمالي جميع الأذكار</Text>
-            </View>
-            
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>{stats.currentAll}</Text>
-              <Text style={styles.statLabel}>الجلسة الحالية</Text>
-            </View>
-          </View>
-          
-          {stats.maxCount > 0 && (
-            <View style={styles.mostUsedCard}>
-              <Text style={styles.mostUsedLabel}>🏆 الأكثر استخداماً</Text>
-              <Text style={styles.mostUsedDhikr}>{stats.mostUsedDhikr}</Text>
-              <Text style={styles.mostUsedCount}>{stats.maxCount} مرة</Text>
-            </View>
-          )}
-        </Animated.View>
-
-        {/* عرض الإجماليات */}
-        <Animated.View style={[styles.totalsContainer, {opacity: fadeAnim}]}>
-          <Text style={styles.sectionTitle}>💾 إجمالي الأذكار المحفوظة</Text>
-          {ADHKAR_LIST.map((dhikr, index) => {
-            const total = totalCounts[dhikr] || 0;
-            const current = currentCounts[dhikr] || 0;
-            const percentage = stats.totalAll > 0 ? Math.round((total / stats.totalAll) * 100) : 0;
-            
-            return (
-              <View key={index} style={styles.totalItem}>
-                <View style={styles.totalItemLeft}>
-                  <Text style={styles.totalDhikrName}>{dhikr}</Text>
-                  <Text style={styles.currentCountText}>جلسة حالية: {current}</Text>
-                </View>
-                <View style={styles.totalItemRight}>
-                  <View style={styles.totalCountBadge}>
-                    <Text style={styles.totalCountText}>{total}</Text>
-                  </View>
-                  {percentage > 0 && (
-                    <Text style={styles.percentageText}>{percentage}%</Text>
-                  )}
-                </View>
-              </View>
-            );
-          })}
-        </Animated.View>
-
-        {/* زر مسح البيانات */}
-        <Animated.View style={{opacity: fadeAnim}}>
-          <TouchableOpacity
-            style={styles.clearButton}
-            onPress={clearAllData}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.clearButtonText}>🗑️ مسح جميع البيانات</Text>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* مساحة إضافية في الأسفل */}
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
+      {currentView === 'counter' ? renderCounterView() : renderStatisticsView()}
     </View>
   );
 };
@@ -528,6 +657,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontWeight: '500',
   },
+  textRTL: {
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  },
   scrollView: {
     flex: 1,
   },
@@ -535,16 +668,38 @@ const styles = StyleSheet.create({
     padding: SCREEN_WIDTH < 360 ? 15 : 20,
     paddingBottom: 40,
   },
-  pickerContainer: {
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    padding: SCREEN_WIDTH < 360 ? 16 : 20,
+  
+  // Language Selector
+  languageSelector: {
+    flexDirection: 'row',
+    justifyContent: 'center',
     marginBottom: 16,
-    elevation: 4,
-    shadowColor: '#0a7e8c',
-    shadowOffset: {width: 0, height: 3},
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
+    gap: 10,
+  },
+  languageButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: '#ffffff',
+    borderWidth: 2,
+    borderColor: '#e0e0e0',
+  },
+  languageButtonActive: {
+    backgroundColor: '#0a7e8c',
+    borderColor: '#0a7e8c',
+  },
+  languageButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+  languageButtonTextActive: {
+    color: '#ffffff',
+  },
+  
+  // Dhikr Selection
+  selectionContainer: {
+    marginBottom: 16,
   },
   sectionTitle: {
     fontSize: SCREEN_WIDTH < 360 ? 18 : 22,
@@ -553,24 +708,63 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     textAlign: 'center',
   },
-  pickerWrapper: {
-    backgroundColor: '#f8fbfd',
-    borderRadius: 15,
-    overflow: 'hidden',
+  dhikrScrollContainer: {
+    paddingVertical: 10,
+    gap: 12,
+  },
+  dhikrCard: {
+    width: SCREEN_WIDTH < 360 ? 140 : 160,
+    height: 100,
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 16,
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#b3e5fc',
+    borderColor: '#e0e0e0',
+    elevation: 3,
+    shadowColor: '#0a7e8c',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    position: 'relative',
   },
-  picker: {
-    width: '100%',
+  dhikrCardActive: {
+    backgroundColor: '#4dd0e1',
+    borderColor: '#0a7e8c',
+    borderWidth: 3,
+    elevation: 6,
+    shadowOpacity: 0.25,
+  },
+  dhikrCardText: {
+    fontSize: SCREEN_WIDTH < 360 ? 14 : 16,
+    fontWeight: '600',
     color: '#333',
-  },
-  pickerItem: {
-    fontSize: SCREEN_WIDTH < 360 ? 18 : 20,
     textAlign: 'center',
   },
-  pickerItemText: {
-    fontSize: SCREEN_WIDTH < 360 ? 18 : 20,
+  dhikrCardTextActive: {
+    color: '#ffffff',
+    fontWeight: 'bold',
   },
+  dhikrCardCheck: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#0a7e8c',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dhikrCardCheckIcon: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  
+  // Dhikr Display
   dhikrDisplayContainer: {
     backgroundColor: '#4dd0e1',
     borderRadius: 25,
@@ -584,7 +778,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   dhikrText: {
-    fontSize: SCREEN_WIDTH < 360 ? 26 : 34,
+    fontSize: SCREEN_WIDTH < 360 ? 24 : 30,
     fontWeight: 'bold',
     color: '#ffffff',
     textAlign: 'center',
@@ -592,6 +786,8 @@ const styles = StyleSheet.create({
     textShadowOffset: {width: 1, height: 1},
     textShadowRadius: 3,
   },
+  
+  // Counter
   counterContainer: {
     backgroundColor: '#ffffff',
     borderRadius: 25,
@@ -617,6 +813,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#0a7e8c',
   },
+  
+  // Main Button
   mainButton: {
     backgroundColor: '#0a7e8c',
     borderRadius: 30,
@@ -651,8 +849,11 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     backgroundColor: '#ffffff',
   },
+  
+  // Control Buttons
   controlButtons: {
     marginBottom: 16,
+    gap: 12,
   },
   resetButton: {
     backgroundColor: '#ff9800',
@@ -667,6 +868,58 @@ const styles = StyleSheet.create({
   },
   resetButtonText: {
     fontSize: SCREEN_WIDTH < 360 ? 16 : 18,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  statsButton: {
+    backgroundColor: '#4caf50',
+    borderRadius: 20,
+    padding: SCREEN_WIDTH < 360 ? 14 : 16,
+    alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#4caf50',
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+  },
+  statsButtonText: {
+    fontSize: SCREEN_WIDTH < 360 ? 16 : 18,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  clearButton: {
+    backgroundColor: '#e53935',
+    borderRadius: 20,
+    padding: SCREEN_WIDTH < 360 ? 14 : 16,
+    alignItems: 'center',
+    marginBottom: 10,
+    elevation: 4,
+    shadowColor: '#e53935',
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+  },
+  clearButtonText: {
+    fontSize: SCREEN_WIDTH < 360 ? 16 : 18,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  
+  // Statistics View
+  backButton: {
+    backgroundColor: '#0a7e8c',
+    borderRadius: 15,
+    padding: 12,
+    marginBottom: 20,
+    alignItems: 'center',
+    elevation: 3,
+    shadowColor: '#0a7e8c',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  backButtonText: {
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#ffffff',
   },
@@ -733,10 +986,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   mostUsedDhikr: {
-    fontSize: SCREEN_WIDTH < 360 ? 22 : 26,
+    fontSize: SCREEN_WIDTH < 360 ? 20 : 24,
     fontWeight: 'bold',
     color: '#0a7e8c',
     marginBottom: 5,
+    textAlign: 'center',
   },
   mostUsedCount: {
     fontSize: SCREEN_WIDTH < 360 ? 16 : 18,
@@ -775,7 +1029,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   totalDhikrName: {
-    fontSize: SCREEN_WIDTH < 360 ? 16 : 18,
+    fontSize: SCREEN_WIDTH < 360 ? 14 : 16,
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 4,
@@ -807,23 +1061,6 @@ const styles = StyleSheet.create({
     fontSize: SCREEN_WIDTH < 360 ? 12 : 14,
     color: '#0a7e8c',
     fontWeight: 'bold',
-  },
-  clearButton: {
-    backgroundColor: '#e53935',
-    borderRadius: 20,
-    padding: SCREEN_WIDTH < 360 ? 14 : 16,
-    alignItems: 'center',
-    marginBottom: 10,
-    elevation: 4,
-    shadowColor: '#e53935',
-    shadowOffset: {width: 0, height: 3},
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-  },
-  clearButtonText: {
-    fontSize: SCREEN_WIDTH < 360 ? 16 : 18,
-    fontWeight: 'bold',
-    color: '#ffffff',
   },
   bottomSpacing: {
     height: 40,
