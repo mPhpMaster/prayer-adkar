@@ -1,62 +1,65 @@
 /**
- * تطبيق عداد الأذكار والتسبيح
- * Dhikr Counter Application
+ * تطبيق عداد الأذكار والتسبيح - محسّن
+ * Enhanced Dhikr Counter Application
  * 
- * هذا التطبيق يسمح للمستخدم بعد الأذكار والتسبيحات المختلفة
- * مع حفظ البيانات محلياً واسترجاعها عند فتح التطبيق
+ * Features:
+ * - Multi-language support (Arabic, English, Thai)
+ * - Beautiful selection UI
+ * - Separate statistics page
+ * - SweetAlert2 integration
+ * - Smooth animations
  */
 
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {
   StyleSheet,
   Text,
   View,
   TouchableOpacity,
   ScrollView,
-  Alert,
-  I18nManager,
   StatusBar,
+  Animated,
+  Dimensions,
+  Platform,
+  Image,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {Picker} from '@react-native-picker/picker';
+import Swal from 'sweetalert2';
+import {TRANSLATIONS, ADHKAR_KEYS, LANGUAGES} from './languages';
 
-// تفعيل اتجاه RTL للغة العربية
-I18nManager.forceRTL(true);
-I18nManager.allowRTL(true);
-
-// قائمة الأذكار المتاحة
-const ADHKAR_LIST = [
-  'سبحان الله',
-  'الحمد لله',
-  'الله أكبر',
-  'لا إله إلا الله',
-  'أستغفر الله',
-  'لا حول ولا قوة إلا بالله',
-];
+const {width: SCREEN_WIDTH} = Dimensions.get('window');
 
 // مفاتيح التخزين المحلي
 const STORAGE_KEY_TOTALS = '@dhikr_counter_totals';
 const STORAGE_KEY_CURRENT = '@dhikr_counter_current';
 const STORAGE_KEY_SELECTED = '@dhikr_counter_selected';
+const STORAGE_KEY_LANGUAGE = '@dhikr_counter_language';
 
 const App = () => {
-  // الذكر المختار حالياً
-  const [selectedDhikr, setSelectedDhikr] = useState(ADHKAR_LIST[0]);
+  // Language state
+  const [language, setLanguage] = useState('ar');
+  const [isRTL, setIsRTL] = useState(true);
   
-  // إجمالي العدد لكل ذكر - كائن يحتوي على كل الأذكار وأعدادها
+  // View state
+  const [currentView, setCurrentView] = useState('counter'); // 'counter' or 'statistics'
+  
+  // الذكر المختار حالياً
+  const [selectedDhikr, setSelectedDhikr] = useState(ADHKAR_KEYS[0]);
+  
+  // إجمالي العدد لكل ذكر
   const [totalCounts, setTotalCounts] = useState(() => {
     const initial = {};
-    ADHKAR_LIST.forEach(dhikr => {
-      initial[dhikr] = 0;
+    ADHKAR_KEYS.forEach(key => {
+      initial[key] = 0;
     });
     return initial;
   });
   
-  // العداد الحالي لكل ذكر - يحفظ العداد الحالي لكل ذكر على حدة
+  // العداد الحالي لكل ذكر
   const [currentCounts, setCurrentCounts] = useState(() => {
     const initial = {};
-    ADHKAR_LIST.forEach(dhikr => {
-      initial[dhikr] = 0;
+    ADHKAR_KEYS.forEach(key => {
+      initial[key] = 0;
     });
     return initial;
   });
@@ -64,11 +67,26 @@ const App = () => {
   // العداد الحالي للذكر المختار
   const currentCount = currentCounts[selectedDhikr] || 0;
 
+  // Animation values
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const counterScaleAnim = useRef(new Animated.Value(1)).current;
+  const buttonScaleAnim = useRef(new Animated.Value(1)).current;
+  const rippleAnim = useRef(new Animated.Value(0)).current;
+
+  // Get translations
+  const t = TRANSLATIONS[language] || TRANSLATIONS.ar;
+
   /**
    * تحميل البيانات المحفوظة عند بدء التطبيق
    */
   useEffect(() => {
     loadData();
+    // Fade in animation on mount
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
   /**
@@ -84,6 +102,14 @@ const App = () => {
   useEffect(() => {
     saveSelectedDhikr();
   }, [selectedDhikr]);
+  
+  /**
+   * حفظ اللغة المختارة
+   */
+  useEffect(() => {
+    saveLanguage();
+    setIsRTL(LANGUAGES[language]?.dir === 'rtl');
+  }, [language]);
 
   /**
    * تحميل البيانات من التخزين المحلي
@@ -108,13 +134,21 @@ const App = () => {
       const selectedJson = await AsyncStorage.getItem(STORAGE_KEY_SELECTED);
       if (selectedJson != null) {
         const loadedSelected = JSON.parse(selectedJson);
-        if (ADHKAR_LIST.includes(loadedSelected)) {
+        if (ADHKAR_KEYS.includes(loadedSelected)) {
           setSelectedDhikr(loadedSelected);
+        }
+      }
+      
+      // تحميل اللغة
+      const languageJson = await AsyncStorage.getItem(STORAGE_KEY_LANGUAGE);
+      if (languageJson != null) {
+        const loadedLanguage = JSON.parse(languageJson);
+        if (LANGUAGES[loadedLanguage]) {
+          setLanguage(loadedLanguage);
         }
       }
     } catch (error) {
       console.error('خطأ في تحميل البيانات:', error);
-      Alert.alert('خطأ', 'حدث خطأ أثناء تحميل البيانات المحفوظة');
     }
   };
 
@@ -123,13 +157,8 @@ const App = () => {
    */
   const saveData = async () => {
     try {
-      // حفظ الإجماليات
-      const totalsJson = JSON.stringify(totalCounts);
-      await AsyncStorage.setItem(STORAGE_KEY_TOTALS, totalsJson);
-      
-      // حفظ العدادات الحالية
-      const currentJson = JSON.stringify(currentCounts);
-      await AsyncStorage.setItem(STORAGE_KEY_CURRENT, currentJson);
+      await AsyncStorage.setItem(STORAGE_KEY_TOTALS, JSON.stringify(totalCounts));
+      await AsyncStorage.setItem(STORAGE_KEY_CURRENT, JSON.stringify(currentCounts));
     } catch (error) {
       console.error('خطأ في حفظ البيانات:', error);
     }
@@ -140,10 +169,20 @@ const App = () => {
    */
   const saveSelectedDhikr = async () => {
     try {
-      const jsonValue = JSON.stringify(selectedDhikr);
-      await AsyncStorage.setItem(STORAGE_KEY_SELECTED, jsonValue);
+      await AsyncStorage.setItem(STORAGE_KEY_SELECTED, JSON.stringify(selectedDhikr));
     } catch (error) {
       console.error('خطأ في حفظ الذكر المختار:', error);
+    }
+  };
+  
+  /**
+   * حفظ اللغة
+   */
+  const saveLanguage = async () => {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY_LANGUAGE, JSON.stringify(language));
+    } catch (error) {
+      console.error('خطأ في حفظ اللغة:', error);
     }
   };
 
@@ -151,6 +190,45 @@ const App = () => {
    * زيادة العداد عند الضغط على الزر
    */
   const incrementCounter = () => {
+    // Play sound effect
+    playCounterSound();
+    
+    // Button press animation
+    Animated.sequence([
+      Animated.timing(buttonScaleAnim, {
+        toValue: 0.9,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(buttonScaleAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Counter scale animation
+    Animated.sequence([
+      Animated.timing(counterScaleAnim, {
+        toValue: 1.2,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(counterScaleAnim, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Ripple animation
+    rippleAnim.setValue(0);
+    Animated.timing(rippleAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
+    
     // زيادة العداد الحالي للذكر المحدد
     setCurrentCounts(prevCounts => ({
       ...prevCounts,
@@ -168,109 +246,87 @@ const App = () => {
    * إعادة تعيين العداد الحالي فقط للذكر المحدد
    */
   const resetCurrentCounter = () => {
-    // For web compatibility, use window.confirm instead of Alert.alert
-    if (typeof window !== 'undefined' && window.confirm) {
-      const confirmed = window.confirm('هل تريد إعادة تعيين العداد الحالي لـ ' + selectedDhikr + '؟');
-      if (confirmed) {
+    Swal.fire({
+      title: t.resetTitle,
+      text: `${t.resetMessage} ${t[selectedDhikr]}?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#ff9800',
+      cancelButtonColor: '#999',
+      confirmButtonText: t.resetConfirm,
+      cancelButtonText: t.cancel,
+      reverseButtons: isRTL,
+    }).then((result) => {
+      if (result.isConfirmed) {
         setCurrentCounts(prevCounts => ({
           ...prevCounts,
           [selectedDhikr]: 0,
         }));
       }
-    } else {
-      // Fallback for React Native
-      Alert.alert(
-        'إعادة تعيين العداد',
-        'هل تريد إعادة تعيين العداد الحالي لـ ' + selectedDhikr + '؟',
-        [
-          {
-            text: 'إلغاء',
-            style: 'cancel',
-          },
-          {
-            text: 'إعادة تعيين',
-            onPress: () => {
-              setCurrentCounts(prevCounts => ({
-                ...prevCounts,
-                [selectedDhikr]: 0,
-              }));
-            },
-            style: 'destructive',
-          },
-        ],
-      );
-    }
+    });
   };
 
   /**
    * مسح جميع البيانات المحفوظة
    */
   const clearAllData = () => {
-    // For web compatibility
-    if (typeof window !== 'undefined' && window.confirm) {
-      const confirmed = window.confirm('هل أنت متأكد من مسح جميع البيانات المحفوظة؟ لا يمكن التراجع عن هذا الإجراء.');
-      if (confirmed) {
+    Swal.fire({
+      title: t.clearTitle,
+      text: t.clearMessage,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#e53935',
+      cancelButtonColor: '#999',
+      confirmButtonText: t.clearConfirm,
+      cancelButtonText: t.cancel,
+      reverseButtons: isRTL,
+    }).then((result) => {
+      if (result.isConfirmed) {
         const resetCounts = {};
-        ADHKAR_LIST.forEach(dhikr => {
-          resetCounts[dhikr] = 0;
+        ADHKAR_KEYS.forEach(key => {
+          resetCounts[key] = 0;
         });
         setTotalCounts(resetCounts);
         setCurrentCounts(resetCounts);
-        window.alert('تم مسح جميع البيانات بنجاح');
+        
+        Swal.fire({
+          title: t.success,
+          text: t.dataCleared,
+          icon: 'success',
+          confirmButtonColor: '#0a7e8c',
+          timer: 2000,
+        });
       }
-    } else {
-      // Fallback for React Native
-      Alert.alert(
-        'مسح جميع البيانات',
-        'هل أنت متأكد من مسح جميع البيانات المحفوظة؟ لا يمكن التراجع عن هذا الإجراء.',
-        [
-          {
-            text: 'إلغاء',
-            style: 'cancel',
-          },
-          {
-            text: 'مسح الكل',
-            onPress: () => {
-              const resetCounts = {};
-              ADHKAR_LIST.forEach(dhikr => {
-                resetCounts[dhikr] = 0;
-              });
-              setTotalCounts(resetCounts);
-              setCurrentCounts(resetCounts);
-              Alert.alert('تم', 'تم مسح جميع البيانات بنجاح');
-            },
-            style: 'destructive',
-          },
-        ],
-      );
-    }
+    });
   };
 
   /**
    * تغيير الذكر المختار
    */
-  const handleDhikrChange = (dhikr) => {
-    setSelectedDhikr(dhikr);
-    // لا حاجة لإعادة تعيين العداد - كل ذكر يحفظ عداده الخاص
+  const handleDhikrChange = (dhikrKey) => {
+    setSelectedDhikr(dhikrKey);
+  };
+
+  /**
+   * Change language
+   */
+  const changeLanguage = (lang) => {
+    setLanguage(lang);
   };
 
   /**
    * حساب إحصائيات الأذكار
    */
   const calculateStatistics = () => {
-    // إجمالي جميع الأذكار
     const totalAll = Object.values(totalCounts).reduce((sum, count) => sum + count, 0);
-    
-    // إجمالي العدادات الحالية
     const currentAll = Object.values(currentCounts).reduce((sum, count) => sum + count, 0);
     
-    // الذكر الأكثر استخداماً
-    let mostUsedDhikr = ADHKAR_LIST[0];
+    let mostUsedDhikr = ADHKAR_KEYS[0];
     let maxCount = totalCounts[mostUsedDhikr] || 0;
-    ADHKAR_LIST.forEach(dhikr => {
-      if ((totalCounts[dhikr] || 0) > maxCount) {
-        maxCount = totalCounts[dhikr] || 0;
-        mostUsedDhikr = dhikr;
+    ADHKAR_KEYS.forEach(key => {
+      if ((totalCounts[key] || 0) > maxCount) {
+        maxCount = totalCounts[key] || 0;
+        mostUsedDhikr = key;
       }
     });
     
@@ -284,136 +340,493 @@ const App = () => {
   
   const stats = calculateStatistics();
 
-  return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0d7377" />
-      
-      {/* شريط العنوان */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>عداد الأذكار والتسبيح</Text>
-        <Text style={styles.headerSubtitle}>احفظ أورادك اليومية</Text>
-      </View>
+  const rippleScale = rippleAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 2],
+  });
 
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+  const rippleOpacity = rippleAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0.6, 0.3, 0],
+  });
+
+  /**
+   * Play counter sound effect
+   */
+  const playCounterSound = () => {
+    if (Platform.OS === 'web') {
+      try {
+        // Create audio context
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Create oscillator for a pleasant beep sound
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        // Connect nodes
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        // Configure sound - pleasant "ding" sound
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // Higher frequency
+        oscillator.type = 'sine'; // Smooth sine wave
+        
+        // Envelope for smooth sound
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        
+        // Play sound
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
+      } catch (error) {
+        console.log('Sound playback not supported');
+      }
+    }
+  };
+
+  /**
+   * Render language selector
+   */
+  const renderLanguageSelector = () => (
+    <View style={styles.languageSelectorWrapper}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.languageSelectorScroll}
+        style={styles.languageSelectorContainer}
       >
-        {/* قسم اختيار الذكر */}
-        <View style={styles.pickerContainer}>
-          <Text style={styles.sectionTitle}>اختر نوع الذكر</Text>
-          <View style={styles.pickerWrapper}>
-            <Picker
-              selectedValue={selectedDhikr}
-              onValueChange={handleDhikrChange}
-              style={styles.picker}
-              itemStyle={styles.pickerItem}
+        {Object.values(LANGUAGES).sort((a, b) => a.order - b.order).map((lang) => (
+          <TouchableOpacity
+            key={lang.code}
+            style={[
+              styles.languageButton,
+              language === lang.code && styles.languageButtonActive,
+            ]}
+            onPress={() => changeLanguage(lang.code)}
+            activeOpacity={0.7}
+          >
+            <Text
+              style={[
+                styles.languageButtonText,
+                language === lang.code && styles.languageButtonTextActive,
+              ]}
             >
-              {ADHKAR_LIST.map((dhikr, index) => (
-                <Picker.Item 
-                  key={index} 
-                  label={dhikr} 
-                  value={dhikr}
-                  style={styles.pickerItemText}
-                />
-              ))}
-            </Picker>
+              {lang.name}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+      {/* Mosque Image */}
+      {Platform.OS === 'web' ? (
+        <img 
+          src="https://wagrmmbkukwblfpfxxcb.supabase.co/storage/v1/object/public/web-img/islamic-arabic-blue-shape-of-masjid-mosque-vector-11642573201guxqvuqnod-removebg-preview.png"
+          alt="Mosque"
+          style={{
+            width: '100%',
+            maxWidth: '400px',
+            height: 'auto',
+            display: 'block',
+            margin: '0 auto 16px auto',
+            opacity: 0.8
+          }}
+        />
+      ) : (
+        <Image 
+          source={{uri: 'https://wagrmmbkukwblfpfxxcb.supabase.co/storage/v1/object/public/web-img/islamic-arabic-blue-shape-of-masjid-mosque-vector-11642573201guxqvuqnod-removebg-preview.png'}}
+          style={styles.mosqueImage}
+          resizeMode="contain"
+        />
+      )}
+    </View>
+  );
+
+  /**
+   * Render prettier dhikr selection
+   */
+  const renderDhikrSelection = () => {
+    const isDesktop = SCREEN_WIDTH >= 768;
+    
+    if (isDesktop) {
+      // Desktop: Show all cards in a wrapped grid
+      return (
+        <Animated.View style={[styles.selectionContainer, {opacity: fadeAnim}]}>
+          <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>
+            {t.selectDhikr}
+          </Text>
+          <View style={styles.dhikrGridContainer}>
+            {ADHKAR_KEYS.map((key) => (
+              <TouchableOpacity
+                key={key}
+                style={[
+                  styles.dhikrCardDesktop,
+                  selectedDhikr === key && styles.dhikrCardActive,
+                ]}
+                onPress={() => handleDhikrChange(key)}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[
+                    styles.dhikrCardText,
+                    selectedDhikr === key && styles.dhikrCardTextActive,
+                    isRTL && styles.textRTL,
+                  ]}
+                  numberOfLines={2}
+                >
+                  {t[key]}
+                </Text>
+                {selectedDhikr === key && (
+                  <View style={styles.dhikrCardCheck}>
+                    <Text style={styles.dhikrCardCheckIcon}>✓</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
           </View>
-        </View>
+        </Animated.View>
+      );
+    }
+    
+    // Mobile: Horizontal scroll
+    return (
+      <Animated.View style={[styles.selectionContainer, {opacity: fadeAnim}]}>
+        <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>
+          {t.selectDhikr}
+        </Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.dhikrScrollContainer}
+          style={styles.dhikrScrollView}
+        >
+          {ADHKAR_KEYS.map((key) => (
+            <TouchableOpacity
+              key={key}
+              style={[
+                styles.dhikrCardMobile,
+                selectedDhikr === key && styles.dhikrCardActive,
+              ]}
+              onPress={() => handleDhikrChange(key)}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.dhikrCardText,
+                  selectedDhikr === key && styles.dhikrCardTextActive,
+                  isRTL && styles.textRTL,
+                ]}
+                numberOfLines={2}
+              >
+                {t[key]}
+              </Text>
+              {selectedDhikr === key && (
+                <View style={styles.dhikrCardCheck}>
+                  <Text style={styles.dhikrCardCheckIcon}>✓</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </Animated.View>
+    );
+  };
 
-        {/* عرض الذكر المختار */}
-        <View style={styles.dhikrDisplayContainer}>
-          <Text style={styles.dhikrText}>{selectedDhikr}</Text>
-        </View>
+  /**
+   * Render counter view
+   */
+  const renderCounterView = () => (
+    <ScrollView 
+      style={styles.scrollView}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+      scrollEnabled={true}
+      nestedScrollEnabled={true}
+    >
+      {/* Language Selector */}
+      {renderLanguageSelector()}
+      
+      {/* Dhikr Selection */}
+      {renderDhikrSelection()}
 
-        {/* العداد الحالي */}
-        <View style={styles.counterContainer}>
-          <Text style={styles.counterLabel}>العدد الحالي</Text>
-          <Text style={styles.counterValue}>{currentCount}</Text>
-        </View>
+      {/* عرض الذكر المختار */}
+      <Animated.View style={[styles.dhikrDisplayContainer, {opacity: fadeAnim, transform: [{scale: fadeAnim}]}]}>
+        <Text style={[styles.dhikrText, isRTL && styles.textRTL]}>
+          {t[selectedDhikr]}
+        </Text>
+      </Animated.View>
 
-        {/* زر العد الرئيسي */}
+      {/* العداد الحالي */}
+      <Animated.View style={[styles.counterContainer, {opacity: fadeAnim, transform: [{scale: counterScaleAnim}]}]}>
+        <Text style={[styles.counterLabel, isRTL && styles.textRTL]}>
+          {t.currentCount}
+        </Text>
+        <Animated.Text style={styles.counterValue}>{currentCount}</Animated.Text>
+      </Animated.View>
+
+      {/* زر العد الرئيسي */}
+      <Animated.View style={{transform: [{scale: buttonScaleAnim}]}}>
         <TouchableOpacity
           style={styles.mainButton}
           onPress={incrementCounter}
-          activeOpacity={0.7}
+          activeOpacity={0.8}
+          role="button"
+          aria-label="Increment counter"
         >
-          <Text style={styles.mainButtonText}>سَبِّح</Text>
-          <Text style={styles.mainButtonSubtext}>اضغط للعد</Text>
+          <Animated.View style={[
+            styles.rippleCircle,
+            {
+              transform: [{scale: rippleScale}],
+              opacity: rippleOpacity,
+            },
+          ]} />
+          <Text style={[styles.mainButtonText, isRTL && styles.textRTL]}>
+            {t.mainButton}
+          </Text>
+          <Text style={[styles.mainButtonSubtext, isRTL && styles.textRTL]}>
+            {t.mainButtonSub}
+          </Text>
         </TouchableOpacity>
+      </Animated.View>
 
-        {/* أزرار التحكم */}
-        <View style={styles.controlButtons}>
-          <TouchableOpacity
-            style={styles.resetButton}
-            onPress={resetCurrentCounter}
-          >
-            <Text style={styles.resetButtonText}>إعادة تعيين العداد</Text>
-          </TouchableOpacity>
-        </View>
+      {/* أزرار التحكم */}
+      <Animated.View style={[styles.controlButtons, {opacity: fadeAnim}]}>
+        <TouchableOpacity
+          style={styles.resetButton}
+          onPress={resetCurrentCounter}
+          activeOpacity={0.8}
+          role="button"
+          aria-label="Reset counter"
+        >
+          <Text style={[styles.resetButtonText, isRTL && styles.textRTL]}>
+            {t.resetCounter}
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={styles.statsButton}
+          onPress={() => setCurrentView('statistics')}
+          activeOpacity={0.8}
+          role="button"
+          aria-label="View statistics"
+        >
+          <Text style={[styles.statsButtonText, isRTL && styles.textRTL]}>
+            {t.viewStatistics}
+          </Text>
+        </TouchableOpacity>
+      </Animated.View>
 
-        {/* قسم الإحصائيات */}
-        <View style={styles.statisticsContainer}>
-          <Text style={styles.sectionTitle}>📊 الإحصائيات</Text>
-          
-          <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>{stats.totalAll}</Text>
-              <Text style={styles.statLabel}>إجمالي جميع الأذكار</Text>
-            </View>
-            
-            <View style={styles.statCard}>
-              <Text style={styles.statValue}>{stats.currentAll}</Text>
-              <Text style={styles.statLabel}>الجلسة الحالية</Text>
-            </View>
-          </View>
-          
-          {stats.maxCount > 0 && (
-            <View style={styles.mostUsedCard}>
-              <Text style={styles.mostUsedLabel}>🏆 الأكثر استخداماً</Text>
-              <Text style={styles.mostUsedDhikr}>{stats.mostUsedDhikr}</Text>
-              <Text style={styles.mostUsedCount}>{stats.maxCount} مرة</Text>
-            </View>
-          )}
-        </View>
-
-        {/* عرض الإجماليات */}
-        <View style={styles.totalsContainer}>
-          <Text style={styles.sectionTitle}>إجمالي الأذكار المحفوظة</Text>
-          {ADHKAR_LIST.map((dhikr, index) => {
-            const total = totalCounts[dhikr] || 0;
-            const current = currentCounts[dhikr] || 0;
-            const percentage = stats.totalAll > 0 ? Math.round((total / stats.totalAll) * 100) : 0;
-            
-            return (
-              <View key={index} style={styles.totalItem}>
-                <View style={styles.totalItemLeft}>
-                  <Text style={styles.totalDhikrName}>{dhikr}</Text>
-                  <Text style={styles.currentCountText}>جلسة حالية: {current}</Text>
-                </View>
-                <View style={styles.totalItemRight}>
-                  <View style={styles.totalCountBadge}>
-                    <Text style={styles.totalCountText}>{total}</Text>
-                  </View>
-                  {percentage > 0 && (
-                    <Text style={styles.percentageText}>{percentage}%</Text>
-                  )}
-                </View>
-              </View>
-            );
-          })}
-        </View>
-
-        {/* زر مسح البيانات */}
+      {/* زر مسح البيانات */}
+      <Animated.View style={{opacity: fadeAnim}}>
         <TouchableOpacity
           style={styles.clearButton}
           onPress={clearAllData}
+          activeOpacity={0.8}
+          role="button"
+          aria-label="Clear all data"
         >
-          <Text style={styles.clearButtonText}>مسح جميع البيانات</Text>
+          <Text style={[styles.clearButtonText, isRTL && styles.textRTL]}>
+            {t.clearAllData}
+          </Text>
         </TouchableOpacity>
+      </Animated.View>
 
-        {/* مساحة إضافية في الأسفل */}
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
+      <View style={styles.bottomSpacing} />
+    </ScrollView>
+  );
+
+  /**
+   * Render statistics view
+   */
+  const renderStatisticsView = () => (
+    <ScrollView 
+      style={styles.scrollView}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Back button */}
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => setCurrentView('counter')}
+        activeOpacity={0.8}
+      >
+        <Text style={[styles.backButtonText, isRTL && styles.textRTL]}>
+          {isRTL ? '→' : '←'} {t.backToCounter}
+        </Text>
+      </TouchableOpacity>
+
+      {/* قسم الإحصائيات */}
+      <View style={styles.statisticsContainer}>
+        <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>
+          {t.statistics}
+        </Text>
+        
+        <View style={styles.statsGrid}>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{stats.totalAll}</Text>
+            <Text style={[styles.statLabel, isRTL && styles.textRTL]}>
+              {t.totalAll}
+            </Text>
+          </View>
+          
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{stats.currentAll}</Text>
+            <Text style={[styles.statLabel, isRTL && styles.textRTL]}>
+              {t.currentSession}
+            </Text>
+          </View>
+        </View>
+        
+        {stats.maxCount > 0 && (
+          <View style={styles.mostUsedCard}>
+            <Text style={[styles.mostUsedLabel, isRTL && styles.textRTL]}>
+              {t.mostUsed}
+            </Text>
+            <Text style={[styles.mostUsedDhikr, isRTL && styles.textRTL]}>
+              {t[stats.mostUsedDhikr]}
+            </Text>
+            <Text style={[styles.mostUsedCount, isRTL && styles.textRTL]}>
+              {stats.maxCount} {t.times}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* عرض الإجماليات */}
+      <View style={styles.totalsContainer}>
+        <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>
+          {t.savedTotals}
+        </Text>
+        {ADHKAR_KEYS.map((key, index) => {
+          const total = totalCounts[key] || 0;
+          const current = currentCounts[key] || 0;
+          const percentage = stats.totalAll > 0 ? Math.round((total / stats.totalAll) * 100) : 0;
+          
+          return (
+            <View key={index} style={styles.totalItem}>
+              <View style={styles.totalItemLeft}>
+                <Text style={[styles.totalDhikrName, isRTL && styles.textRTL]}>
+                  {t[key]}
+                </Text>
+                <Text style={[styles.currentCountText, isRTL && styles.textRTL]}>
+                  {t.session}: {current}
+                </Text>
+              </View>
+              <View style={styles.totalItemRight}>
+                <View style={styles.totalCountBadge}>
+                  <Text style={styles.totalCountText}>{total}</Text>
+                </View>
+                {percentage > 0 && (
+                  <Text style={styles.percentageText}>{percentage}%</Text>
+                )}
+              </View>
+            </View>
+          );
+        })}
+      </View>
+
+      <View style={styles.bottomSpacing} />
+    </ScrollView>
+  );
+
+  /**
+   * Render Islamic Theme Background Elements
+   */
+  const renderIslamicBackground = () => {
+    if (Platform.OS === 'web') {
+      return (
+        <div className="islamic-background">
+          {/* Stars Container */}
+          <div className="stars-container">
+            {[...Array(50)].map((_, i) => (
+              <div
+                key={i}
+                className="star"
+                style={{
+                  top: `${Math.random() * 100}%`,
+                  left: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 3}s`,
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Shooting Stars */}
+          <div className="shooting-star"></div>
+          <div className="shooting-star"></div>
+          <div className="shooting-star"></div>
+          <div className="shooting-star"></div>
+
+          {/* Galaxy Particles */}
+          {[...Array(20)].map((_, i) => (
+            <div
+              key={i}
+              className="galaxy-particle"
+              style={{
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 10}s`,
+              }}
+            />
+          ))}
+
+          {/* Sparkles */}
+          {[...Array(10)].map((_, i) => (
+            <div
+              key={i}
+              className="sparkle"
+              style={{
+                top: `${20 + Math.random() * 60}%`,
+                left: `${10 + Math.random() * 80}%`,
+                animationDelay: `${Math.random() * 2}s`,
+              }}
+            />
+          ))}
+
+          {/* Islamic Pattern Overlay */}
+          <div className="islamic-pattern"></div>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#0a0e27" />
+      
+      {/* Islamic Theme Background */}
+      {renderIslamicBackground()}
+      
+      {/* شريط العنوان */}
+      <Animated.View style={[styles.header, {opacity: fadeAnim}]}>
+        <View style={styles.headerContent}>
+          <View style={styles.headerTitleRow}>
+            {Platform.OS === 'web' ? (
+              <img 
+                src="adhkar-icon.svg" 
+                alt="ADHKAR" 
+                style={{
+                  width: '35px',
+                  height: '35px',
+                  marginRight: isRTL ? '0' : '20px',
+                  marginLeft: isRTL ? '20px' : '0',
+                  filter: 'brightness(0) invert(1)',
+                }}
+              />
+            ) : (
+              <Image 
+                source={require('./public/adhkar-icon.svg')}
+                style={styles.headerIcon}
+              />
+            )}
+            <Text style={[styles.headerTitle, isRTL && styles.textRTL]}>
+              {t.appTitle}
+            </Text>
+          </View>
+        </View>
+      </Animated.View>
+
+      {currentView === 'counter' ? renderCounterView() : renderStatisticsView()}
     </View>
   );
 };
@@ -421,227 +834,488 @@ const App = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#0a0e27',
   },
   header: {
-    backgroundColor: '#0d7377',
-    paddingTop: 50,
-    paddingBottom: 30,
+    backgroundColor: 'rgba(30, 58, 95, 0.95)',
+    paddingTop: Platform.OS === 'web' ? 30 : 50,
+    paddingBottom: 25,
     paddingHorizontal: 20,
     alignItems: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    elevation: 8,
+    shadowColor: '#4dd0e1',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
+  headerContent: {
+    alignItems: 'center',
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  headerIcon: {
+    width: 35,
+    height: 35,
+    marginRight: 20,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: SCREEN_WIDTH < 360 ? 26 : 32,
     fontWeight: 'bold',
     color: '#ffffff',
     textAlign: 'center',
-    marginBottom: 8,
+    letterSpacing: 1,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: {width: 0, height: 2},
+    textShadowRadius: 4,
   },
   headerSubtitle: {
-    fontSize: 16,
-    color: '#e0f7fa',
+    fontSize: SCREEN_WIDTH < 360 ? 14 : 16,
+    color: '#ffd700',
     textAlign: 'center',
+    fontWeight: '500',
+  },
+  textRTL: {
+    textAlign: 'right',
+    writingDirection: 'rtl',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
+    padding: SCREEN_WIDTH < 360 ? 15 : 20,
+    paddingBottom: 100,
+    flexGrow: 1,
   },
-  pickerContainer: {
-    backgroundColor: '#ffffff',
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 20,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
+  
+  // Language Selector
+  languageSelectorWrapper: {
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  languageSelectorContainer: {
+    flexGrow: 0,
+  },
+  languageSelectorScroll: {
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    gap: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  languageButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 2,
+    borderColor: 'rgba(77, 208, 225, 0.3)',
+    marginRight: 10,
+  },
+  languageButtonActive: {
+    backgroundColor: 'rgba(77, 208, 225, 0.3)',
+    borderColor: '#4dd0e1',
+  },
+  languageButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#b0c4de',
+  },
+  languageButtonTextActive: {
+    color: '#ffffff',
+  },
+  mosqueImage: {
+    width: '100%',
+    maxWidth: 400,
+    height: 150,
+    marginBottom: 16,
+    opacity: 0.8,
+  },
+  
+  // Dhikr Selection
+  selectionContainer: {
+    marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: SCREEN_WIDTH < 360 ? 18 : 22,
     fontWeight: 'bold',
-    color: '#0d7377',
+    color: '#4dd0e1',
     marginBottom: 15,
     textAlign: 'center',
+    textShadowColor: 'rgba(77, 208, 225, 0.5)',
+    textShadowOffset: {width: 0, height: 2},
+    textShadowRadius: 8,
   },
-  pickerWrapper: {
-    backgroundColor: '#f0f0f0',
-    borderRadius: 10,
-    overflow: 'hidden',
+  // Desktop: Grid layout
+  dhikrGridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 12,
+    paddingVertical: 10,
+  },
+  dhikrCardDesktop: {
+    width: SCREEN_WIDTH >= 1024 ? 180 : 160,
+    height: 100,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 20,
+    padding: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(77, 208, 225, 0.3)',
+    elevation: 8,
+    shadowColor: '#4dd0e1',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    position: 'relative',
+  },
+  // Mobile: Horizontal scroll
+  dhikrScrollView: {
+    flexGrow: 0,
+  },
+  dhikrScrollContainer: {
+    paddingVertical: 10,
+    paddingHorizontal: 5,
+    gap: 12,
+  },
+  dhikrCardMobile: {
+    width: SCREEN_WIDTH < 360 ? 140 : 160,
+    height: 100,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 20,
+    padding: 16,
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(77, 208, 225, 0.3)',
+    elevation: 8,
+    shadowColor: '#4dd0e1',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    position: 'relative',
+  },
+  dhikrCardActive: {
+    backgroundColor: 'rgba(77, 208, 225, 0.3)',
+    borderColor: '#4dd0e1',
     borderWidth: 2,
-    borderColor: '#0d7377',
+    elevation: 12,
+    shadowColor: '#4dd0e1',
+    shadowOpacity: 0.6,
   },
-  picker: {
-    width: '100%',
-    color: '#333',
-  },
-  pickerItem: {
-    fontSize: 20,
+  dhikrCardText: {
+    fontSize: SCREEN_WIDTH < 360 ? 14 : 16,
+    fontWeight: '600',
+    color: '#e0f7fa',
     textAlign: 'center',
   },
-  pickerItemText: {
-    fontSize: 20,
+  dhikrCardTextActive: {
+    color: '#ffffff',
+    fontWeight: 'bold',
   },
-  dhikrDisplayContainer: {
-    backgroundColor: '#14ffec',
-    borderRadius: 15,
-    padding: 25,
-    marginBottom: 20,
+  dhikrCardCheck: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#ffd700',
+    justifyContent: 'center',
     alignItems: 'center',
-    elevation: 3,
-    shadowColor: '#0d7377',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.3,
-    shadowRadius: 2.22,
+  },
+  dhikrCardCheckIcon: {
+    color: '#0a0e27',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  
+  // Dhikr Display
+  dhikrDisplayContainer: {
+    backgroundColor: 'rgba(77, 208, 225, 0.15)',
+    borderRadius: 25,
+    padding: SCREEN_WIDTH < 360 ? 20 : 28,
+    marginBottom: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.4)',
+    elevation: 8,
+    shadowColor: '#ffd700',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
   },
   dhikrText: {
-    fontSize: 32,
+    fontSize: SCREEN_WIDTH < 360 ? 24 : 30,
     fontWeight: 'bold',
-    color: '#0d7377',
+    color: '#ffffff',
     textAlign: 'center',
+    textShadowColor: 'rgba(77, 208, 225, 0.5)',
+    textShadowOffset: {width: 0, height: 2},
+    textShadowRadius: 8,
   },
+  
+  // Counter
   counterContainer: {
-    backgroundColor: '#ffffff',
-    borderRadius: 15,
-    padding: 30,
-    marginBottom: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 25,
+    padding: SCREEN_WIDTH < 360 ? 25 : 35,
+    marginBottom: 16,
     alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#0d7377',
+    borderWidth: 2,
+    borderColor: 'rgba(77, 208, 225, 0.5)',
+    elevation: 10,
+    shadowColor: '#4dd0e1',
+    shadowOffset: {width: 0, height: 6},
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
   },
   counterLabel: {
-    fontSize: 20,
-    color: '#666',
+    fontSize: SCREEN_WIDTH < 360 ? 16 : 20,
+    color: '#b3e5fc',
     marginBottom: 10,
+    fontWeight: '600',
   },
   counterValue: {
-    fontSize: 72,
+    fontSize: SCREEN_WIDTH < 360 ? 64 : 80,
     fontWeight: 'bold',
-    color: '#0d7377',
+    color: '#ffd700',
+    textShadowColor: 'rgba(255, 215, 0, 0.5)',
+    textShadowOffset: {width: 0, height: 2},
+    textShadowRadius: 10,
   },
+  
+  // Main Button
   mainButton: {
-    backgroundColor: '#0d7377',
-    borderRadius: 20,
-    padding: 30,
+    backgroundColor: 'rgba(77, 208, 225, 0.3)',
+    borderRadius: 30,
+    padding: SCREEN_WIDTH < 360 ? 25 : 35,
     alignItems: 'center',
-    marginBottom: 20,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.3,
-    shadowRadius: 3.84,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#4dd0e1',
+    elevation: 12,
+    shadowColor: '#4dd0e1',
+    shadowOffset: {width: 0, height: 8},
+    shadowOpacity: 0.6,
+    shadowRadius: 15,
+    overflow: 'hidden',
   },
   mainButtonText: {
-    fontSize: 36,
+    fontSize: SCREEN_WIDTH < 360 ? 32 : 40,
     fontWeight: 'bold',
     color: '#ffffff',
     marginBottom: 5,
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: {width: 1, height: 1},
+    textShadowRadius: 2,
   },
   mainButtonSubtext: {
-    fontSize: 16,
-    color: '#e0f7fa',
+    fontSize: SCREEN_WIDTH < 360 ? 14 : 16,
+    color: '#b3e5fc',
+    fontWeight: '500',
   },
+  rippleCircle: {
+    position: 'absolute',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#ffffff',
+  },
+  
+  // Control Buttons
   controlButtons: {
-    marginBottom: 20,
+    marginBottom: 16,
+    gap: 12,
   },
   resetButton: {
-    backgroundColor: '#ff9800',
-    borderRadius: 12,
-    padding: 15,
+    backgroundColor: 'rgba(255, 152, 0, 0.3)',
+    borderRadius: 20,
+    padding: SCREEN_WIDTH < 360 ? 14 : 16,
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#ff9800',
+    elevation: 6,
+    shadowColor: '#ff9800',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
   },
   resetButtonText: {
-    fontSize: 18,
+    fontSize: SCREEN_WIDTH < 360 ? 16 : 18,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  statsButton: {
+    backgroundColor: 'rgba(76, 175, 80, 0.3)',
+    borderRadius: 20,
+    padding: SCREEN_WIDTH < 360 ? 14 : 16,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#4caf50',
+    elevation: 6,
+    shadowColor: '#4caf50',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+  },
+  statsButtonText: {
+    fontSize: SCREEN_WIDTH < 360 ? 16 : 18,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  clearButton: {
+    backgroundColor: 'rgba(229, 57, 53, 0.3)',
+    borderRadius: 20,
+    padding: SCREEN_WIDTH < 360 ? 14 : 16,
+    alignItems: 'center',
+    marginBottom: 10,
+    borderWidth: 2,
+    borderColor: '#e53935',
+    elevation: 6,
+    shadowColor: '#e53935',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+  },
+  clearButtonText: {
+    fontSize: SCREEN_WIDTH < 360 ? 16 : 18,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  
+  // Statistics View
+  backButton: {
+    backgroundColor: 'rgba(77, 208, 225, 0.3)',
+    borderRadius: 15,
+    padding: 12,
+    marginBottom: 20,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#4dd0e1',
+    elevation: 6,
+    shadowColor: '#4dd0e1',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+  },
+  backButtonText: {
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#ffffff',
   },
   statisticsContainer: {
-    backgroundColor: '#ffffff',
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 20,
-    elevation: 3,
-    shadowColor: '#0d7377',
-    shadowOffset: {width: 0, height: 2},
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 20,
+    padding: SCREEN_WIDTH < 360 ? 16 : 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(77, 208, 225, 0.3)',
+    elevation: 6,
+    shadowColor: '#4dd0e1',
+    shadowOffset: {width: 0, height: 4},
     shadowOpacity: 0.3,
-    shadowRadius: 2.22,
+    shadowRadius: 8,
   },
   statsGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 15,
+    gap: 10,
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#e0f7fa',
-    borderRadius: 12,
-    padding: 15,
+    backgroundColor: 'rgba(77, 208, 225, 0.15)',
+    borderRadius: 16,
+    padding: SCREEN_WIDTH < 360 ? 12 : 16,
     alignItems: 'center',
-    marginHorizontal: 5,
-    borderWidth: 2,
-    borderColor: '#0d7377',
+    borderWidth: 1,
+    borderColor: 'rgba(77, 208, 225, 0.4)',
+    elevation: 4,
+    shadowColor: '#4dd0e1',
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
   },
   statValue: {
-    fontSize: 36,
+    fontSize: SCREEN_WIDTH < 360 ? 32 : 40,
     fontWeight: 'bold',
-    color: '#0d7377',
+    color: '#ffd700',
     marginBottom: 5,
+    textShadowColor: 'rgba(255, 215, 0, 0.5)',
+    textShadowOffset: {width: 0, height: 2},
+    textShadowRadius: 6,
   },
   statLabel: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: SCREEN_WIDTH < 360 ? 12 : 14,
+    color: '#b3e5fc',
     textAlign: 'center',
+    fontWeight: '600',
   },
   mostUsedCard: {
-    backgroundColor: '#fff3cd',
-    borderRadius: 12,
-    padding: 15,
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    borderRadius: 16,
+    padding: SCREEN_WIDTH < 360 ? 14 : 18,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#ffc107',
+    borderColor: '#ffd700',
+    elevation: 6,
+    shadowColor: '#ffd700',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
   },
   mostUsedLabel: {
-    fontSize: 16,
-    color: '#856404',
+    fontSize: SCREEN_WIDTH < 360 ? 14 : 16,
+    color: '#ffd700',
     fontWeight: 'bold',
     marginBottom: 8,
   },
   mostUsedDhikr: {
-    fontSize: 24,
+    fontSize: SCREEN_WIDTH < 360 ? 20 : 24,
     fontWeight: 'bold',
-    color: '#0d7377',
+    color: '#ffffff',
     marginBottom: 5,
+    textAlign: 'center',
   },
   mostUsedCount: {
-    fontSize: 18,
-    color: '#666',
+    fontSize: SCREEN_WIDTH < 360 ? 16 : 18,
+    color: '#b3e5fc',
+    fontWeight: '600',
   },
   totalsContainer: {
-    backgroundColor: '#ffffff',
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 20,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 20,
+    padding: SCREEN_WIDTH < 360 ? 16 : 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(77, 208, 225, 0.3)',
+    elevation: 6,
+    shadowColor: '#4dd0e1',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   totalItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 15,
+    paddingVertical: SCREEN_WIDTH < 360 ? 12 : 16,
     paddingHorizontal: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: 'rgba(77, 208, 225, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    marginBottom: 8,
   },
   totalItemLeft: {
     flex: 1,
@@ -649,51 +1323,46 @@ const styles = StyleSheet.create({
   totalItemRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
   totalDhikrName: {
-    fontSize: 18,
+    fontSize: SCREEN_WIDTH < 360 ? 14 : 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#e0f7fa',
     marginBottom: 4,
   },
   currentCountText: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: SCREEN_WIDTH < 360 ? 12 : 14,
+    color: '#b0c4de',
     fontStyle: 'italic',
   },
   totalCountBadge: {
-    backgroundColor: '#0d7377',
-    borderRadius: 20,
+    backgroundColor: 'rgba(77, 208, 225, 0.3)',
+    borderRadius: 18,
     paddingVertical: 6,
-    paddingHorizontal: 15,
-    minWidth: 60,
+    paddingHorizontal: SCREEN_WIDTH < 360 ? 12 : 15,
+    minWidth: SCREEN_WIDTH < 360 ? 50 : 60,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#4dd0e1',
+    elevation: 3,
+    shadowColor: '#4dd0e1',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
   },
   totalCountText: {
-    fontSize: 18,
+    fontSize: SCREEN_WIDTH < 360 ? 16 : 18,
     fontWeight: 'bold',
     color: '#ffffff',
   },
   percentageText: {
-    fontSize: 14,
-    color: '#0d7377',
+    fontSize: SCREEN_WIDTH < 360 ? 12 : 14,
+    color: '#ffd700',
     fontWeight: 'bold',
-  },
-  clearButton: {
-    backgroundColor: '#d32f2f',
-    borderRadius: 12,
-    padding: 15,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  clearButtonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#ffffff',
   },
   bottomSpacing: {
-    height: 30,
+    height: 40,
   },
 });
 

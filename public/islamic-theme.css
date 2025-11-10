@@ -1,0 +1,353 @@
+/* Islamic Theme with Mosque, Stars, Galaxy & 3D Animations */
+
+/* Galaxy Gradient Background */
+.app-container {
+  background: linear-gradient(135deg, 
+    #0a0e27 0%, 
+    #1a1d3e 25%, 
+    #2d1b4e 50%, 
+    #1e3a5f 75%, 
+    #0f2537 100%
+  );
+  position: relative;
+  overflow: hidden;
+  min-height: 100vh;
+}
+
+/* Animated Stars Background */
+.stars-container {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.star {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: white;
+  border-radius: 50%;
+  animation: twinkle 3s infinite;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.5); }
+}
+
+/* Shooting Stars */
+.shooting-star {
+  position: fixed;
+  width: 2px;
+  height: 2px;
+  background: linear-gradient(90deg, #fff, transparent);
+  border-radius: 50%;
+  box-shadow: 0 0 10px #fff, 0 0 20px #fff;
+  animation: shoot 3s linear infinite;
+  z-index: 1;
+}
+
+@keyframes shoot {
+  0% {
+    transform: translate(0, 0) rotate(-45deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-500px, 500px) rotate(-45deg);
+    opacity: 0;
+  }
+}
+
+.shooting-star:nth-child(1) { top: 10%; right: 20%; animation-delay: 0s; }
+.shooting-star:nth-child(2) { top: 30%; right: 50%; animation-delay: 1.5s; }
+.shooting-star:nth-child(3) { top: 50%; right: 80%; animation-delay: 3s; }
+.shooting-star:nth-child(4) { top: 20%; right: 60%; animation-delay: 4.5s; }
+
+/* Button Hover Effects */
+button, .button, [role="button"] {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+button:hover, .button:hover, [role="button"]:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.2);
+}
+
+/* 3D Card Animations */
+.card-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: float 3s ease-in-out infinite;
+  cursor: pointer;
+}
+
+.card-3d:hover {
+  transform: translateY(-10px) rotateX(5deg) rotateY(5deg) scale(1.05);
+  box-shadow: 0 20px 40px rgba(13, 126, 140, 0.4),
+              0 0 20px rgba(77, 208, 225, 0.3);
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+/* 3D Button Animation */
+.button-3d {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: all 0.3s ease;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.button-3d:active {
+  transform: translateZ(-20px) scale(0.95);
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(77, 208, 225, 0.5),
+                0 0 40px rgba(77, 208, 225, 0.3),
+                inset 0 0 20px rgba(255, 255, 255, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(77, 208, 225, 0.8),
+                0 0 60px rgba(77, 208, 225, 0.5),
+                inset 0 0 30px rgba(255, 255, 255, 0.2);
+  }
+}
+
+/* Counter 3D Effect */
+.counter-3d {
+  transform-style: preserve-3d;
+  perspective: 1000px;
+  animation: rotate-3d 20s linear infinite;
+}
+
+@keyframes rotate-3d {
+  0% { transform: rotateY(0deg); }
+  100% { transform: rotateY(360deg); }
+}
+
+/* Galaxy Particles */
+.galaxy-particle {
+  position: fixed;
+  width: 4px;
+  height: 4px;
+  background: radial-gradient(circle, #4dd0e1, transparent);
+  border-radius: 50%;
+  animation: float-particle 10s infinite;
+  z-index: 0;
+}
+
+@keyframes float-particle {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translate(100px, -100px) scale(1.5);
+    opacity: 0.8;
+  }
+}
+
+/* Islamic Pattern Overlay */
+.islamic-pattern {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background-image: 
+    repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(255, 215, 0, 0.03) 35px, rgba(255, 215, 0, 0.03) 70px),
+    repeating-linear-gradient(-45deg, transparent, transparent 35px, rgba(77, 208, 225, 0.03) 35px, rgba(77, 208, 225, 0.03) 70px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Glowing Moon */
+.moon {
+  position: fixed;
+  top: 10%;
+  right: 10%;
+  width: 80px;
+  height: 80px;
+  background: radial-gradient(circle at 30% 30%, #fff, #e0e0e0);
+  border-radius: 50%;
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.6),
+              0 0 60px rgba(255, 255, 255, 0.4),
+              inset -10px -10px 20px rgba(0, 0, 0, 0.2);
+  animation: moon-glow 4s ease-in-out infinite;
+  z-index: 1;
+}
+
+@keyframes moon-glow {
+  0%, 100% {
+    box-shadow: 0 0 30px rgba(255, 255, 255, 0.6),
+                0 0 60px rgba(255, 255, 255, 0.4),
+                inset -10px -10px 20px rgba(0, 0, 0, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 50px rgba(255, 255, 255, 0.8),
+                0 0 100px rgba(255, 255, 255, 0.6),
+                inset -10px -10px 20px rgba(0, 0, 0, 0.2);
+  }
+}
+
+/* Header Galaxy Effect */
+.header-galaxy {
+  background: linear-gradient(135deg, 
+    #0a1628 0%,
+    #1e3a5f 50%,
+    #2d1b4e 100%
+  );
+  position: relative;
+  overflow: hidden;
+}
+
+.header-galaxy::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(77, 208, 225, 0.1), transparent);
+  animation: rotate-gradient 30s linear infinite;
+}
+
+@keyframes rotate-gradient {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Glass Morphism Effect */
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+/* Shimmer Effect */
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* Sparkle Effect */
+.sparkle {
+  position: fixed;
+  width: 6px;
+  height: 6px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 0 10px white;
+  animation: sparkle-twinkle 2s ease-in-out infinite;
+  z-index: 1;
+}
+
+@keyframes sparkle-twinkle {
+  0%, 100% { 
+    opacity: 0;
+    transform: scale(0) rotate(0deg);
+  }
+  50% { 
+    opacity: 1;
+    transform: scale(1) rotate(180deg);
+  }
+}
+
+/* Interactive Elements Hover */
+div[role="button"], 
+div[class*="button"], 
+div[class*="Button"],
+div[class*="card"],
+div[class*="Card"] {
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease;
+}
+
+div[role="button"]:hover, 
+div[class*="button"]:hover, 
+div[class*="Button"]:hover {
+  transform: scale(1.05) translateY(-3px);
+  filter: brightness(1.15);
+  box-shadow: 0 8px 25px rgba(77, 208, 225, 0.5);
+}
+
+div[class*="card"]:hover,
+div[class*="Card"]:hover {
+  transform: scale(1.03) translateY(-2px);
+  box-shadow: 0 6px 20px rgba(77, 208, 225, 0.4);
+}
+
+/* Main Counter Button Hover */
+div[class*="mainButton"]:hover {
+  transform: scale(1.08) translateY(-5px);
+  box-shadow: 0 12px 35px rgba(77, 208, 225, 0.6),
+              0 0 30px rgba(77, 208, 225, 0.4);
+  filter: brightness(1.2);
+}
+
+/* Language Button Hover */
+div[class*="language"]:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 15px rgba(77, 208, 225, 0.5);
+}
+
+/* Cursor pointer for all touchable */
+div[data-touchable="true"],
+div[aria-label],
+a {
+  cursor: pointer;
+}
+
+/* Hide scrollbars but allow scrolling */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+*::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .moon {
+    width: 50px;
+    height: 50px;
+    top: 8%;
+    right: 8%;
+  }
+  
+  /* Reduce hover effects on mobile */
+  div[role="button"]:hover, 
+  div[class*="button"]:hover, 
+  div[class*="Button"]:hover {
+    transform: scale(1.02) translateY(-1px);
+  }
+}
