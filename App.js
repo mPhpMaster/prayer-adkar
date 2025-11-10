@@ -736,29 +736,9 @@ const App = () => {
       {/* شريط العنوان */}
       <Animated.View style={[styles.header, {opacity: fadeAnim}]}>
         <View style={styles.headerContent}>
-          <View style={styles.headerTitleRow}>
-            {Platform.OS === 'web' ? (
-              <img 
-                src="prayer-icon.svg" 
-                alt="ADHKAR" 
-                style={{
-                  width: 40,
-                  height: 40,
-                  marginRight: isRTL ? 0 : 12,
-                  marginLeft: isRTL ? 12 : 0,
-                  filter: 'brightness(0) invert(1)',
-                }}
-              />
-            ) : (
-              <Image 
-                source={require('./public/prayer-icon.svg')}
-                style={styles.headerIcon}
-              />
-            )}
-            <Text style={[styles.headerTitle, isRTL && styles.textRTL]}>
-              {t.appTitle}
-            </Text>
-          </View>
+          <Text style={[styles.headerTitle, isRTL && styles.textRTL]}>
+            {t.appTitle}
+          </Text>
           <Text style={[styles.headerSubtitle, isRTL && styles.textRTL]}>
             {t.appSubtitle}
           </Text>
@@ -791,17 +771,6 @@ const styles = StyleSheet.create({
   },
   headerContent: {
     alignItems: 'center',
-  },
-  headerTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  headerIcon: {
-    width: 40,
-    height: 40,
-    marginRight: 12,
   },
   headerTitle: {
     fontSize: SCREEN_WIDTH < 360 ? 26 : 32,
