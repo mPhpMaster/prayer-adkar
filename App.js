@@ -6,7 +6,7 @@
  * مع حفظ البيانات محلياً واسترجاعها عند فتح التطبيق
  */
 
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {
   StyleSheet,
   Text,
@@ -16,6 +16,9 @@ import {
   Alert,
   I18nManager,
   StatusBar,
+  Animated,
+  Dimensions,
+  Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Picker} from '@react-native-picker/picker';
@@ -23,6 +26,8 @@ import {Picker} from '@react-native-picker/picker';
 // تفعيل اتجاه RTL للغة العربية
 I18nManager.forceRTL(true);
 I18nManager.allowRTL(true);
+
+const {width: SCREEN_WIDTH} = Dimensions.get('window');
 
 // قائمة الأذكار المتاحة
 const ADHKAR_LIST = [
@@ -64,11 +69,23 @@ const App = () => {
   // العداد الحالي للذكر المختار
   const currentCount = currentCounts[selectedDhikr] || 0;
 
+  // Animation values
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const counterScaleAnim = useRef(new Animated.Value(1)).current;
+  const buttonScaleAnim = useRef(new Animated.Value(1)).current;
+  const rippleAnim = useRef(new Animated.Value(0)).current;
+
   /**
    * تحميل البيانات المحفوظة عند بدء التطبيق
    */
   useEffect(() => {
     loadData();
+    // Fade in animation on mount
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
   /**
@@ -151,6 +168,42 @@ const App = () => {
    * زيادة العداد عند الضغط على الزر
    */
   const incrementCounter = () => {
+    // Button press animation
+    Animated.sequence([
+      Animated.timing(buttonScaleAnim, {
+        toValue: 0.9,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(buttonScaleAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Counter scale animation
+    Animated.sequence([
+      Animated.timing(counterScaleAnim, {
+        toValue: 1.2,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(counterScaleAnim, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Ripple animation
+    rippleAnim.setValue(0);
+    Animated.timing(rippleAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
+    
     // زيادة العداد الحالي للذكر المحدد
     setCurrentCounts(prevCounts => ({
       ...prevCounts,
@@ -284,23 +337,34 @@ const App = () => {
   
   const stats = calculateStatistics();
 
+  const rippleScale = rippleAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 2],
+  });
+
+  const rippleOpacity = rippleAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [0.6, 0.3, 0],
+  });
+
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0d7377" />
+      <StatusBar barStyle="light-content" backgroundColor="#0a5f5f" />
       
       {/* شريط العنوان */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>عداد الأذكار والتسبيح</Text>
-        <Text style={styles.headerSubtitle}>احفظ أورادك اليومية</Text>
-      </View>
+      <Animated.View style={[styles.header, {opacity: fadeAnim}]}>
+        <Text style={styles.headerTitle}>✨ عداد الأذكار والتسبيح</Text>
+        <Text style={styles.headerSubtitle}>احفظ أورادك اليومية بسهولة</Text>
+      </Animated.View>
 
       <ScrollView 
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
         {/* قسم اختيار الذكر */}
-        <View style={styles.pickerContainer}>
-          <Text style={styles.sectionTitle}>اختر نوع الذكر</Text>
+        <Animated.View style={[styles.pickerContainer, {opacity: fadeAnim, transform: [{translateY: fadeAnim.interpolate({inputRange: [0, 1], outputRange: [20, 0]})}]}]}>
+          <Text style={styles.sectionTitle}>📿 اختر نوع الذكر</Text>
           <View style={styles.pickerWrapper}>
             <Picker
               selectedValue={selectedDhikr}
@@ -318,41 +382,51 @@ const App = () => {
               ))}
             </Picker>
           </View>
-        </View>
+        </Animated.View>
 
         {/* عرض الذكر المختار */}
-        <View style={styles.dhikrDisplayContainer}>
-          <Text style={styles.dhikrText}>{selectedDhikr}</Text>
-        </View>
+        <Animated.View style={[styles.dhikrDisplayContainer, {opacity: fadeAnim, transform: [{scale: fadeAnim}]}]}>
+          <Text style={styles.dhikrText}>🌙 {selectedDhikr} 🌙</Text>
+        </Animated.View>
 
         {/* العداد الحالي */}
-        <View style={styles.counterContainer}>
+        <Animated.View style={[styles.counterContainer, {opacity: fadeAnim, transform: [{scale: counterScaleAnim}]}]}>
           <Text style={styles.counterLabel}>العدد الحالي</Text>
-          <Text style={styles.counterValue}>{currentCount}</Text>
-        </View>
+          <Animated.Text style={styles.counterValue}>{currentCount}</Animated.Text>
+        </Animated.View>
 
         {/* زر العد الرئيسي */}
-        <TouchableOpacity
-          style={styles.mainButton}
-          onPress={incrementCounter}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.mainButtonText}>سَبِّح</Text>
-          <Text style={styles.mainButtonSubtext}>اضغط للعد</Text>
-        </TouchableOpacity>
+        <Animated.View style={{transform: [{scale: buttonScaleAnim}]}}>
+          <TouchableOpacity
+            style={styles.mainButton}
+            onPress={incrementCounter}
+            activeOpacity={0.8}
+          >
+            <Animated.View style={[
+              styles.rippleCircle,
+              {
+                transform: [{scale: rippleScale}],
+                opacity: rippleOpacity,
+              },
+            ]} />
+            <Text style={styles.mainButtonText}>سَبِّح ✨</Text>
+            <Text style={styles.mainButtonSubtext}>اضغط للعد</Text>
+          </TouchableOpacity>
+        </Animated.View>
 
         {/* أزرار التحكم */}
-        <View style={styles.controlButtons}>
+        <Animated.View style={[styles.controlButtons, {opacity: fadeAnim}]}>
           <TouchableOpacity
             style={styles.resetButton}
             onPress={resetCurrentCounter}
+            activeOpacity={0.8}
           >
-            <Text style={styles.resetButtonText}>إعادة تعيين العداد</Text>
+            <Text style={styles.resetButtonText}>🔄 إعادة تعيين العداد</Text>
           </TouchableOpacity>
-        </View>
+        </Animated.View>
 
         {/* قسم الإحصائيات */}
-        <View style={styles.statisticsContainer}>
+        <Animated.View style={[styles.statisticsContainer, {opacity: fadeAnim, transform: [{translateY: fadeAnim.interpolate({inputRange: [0, 1], outputRange: [30, 0]})}]}]}>
           <Text style={styles.sectionTitle}>📊 الإحصائيات</Text>
           
           <View style={styles.statsGrid}>
@@ -374,11 +448,11 @@ const App = () => {
               <Text style={styles.mostUsedCount}>{stats.maxCount} مرة</Text>
             </View>
           )}
-        </View>
+        </Animated.View>
 
         {/* عرض الإجماليات */}
-        <View style={styles.totalsContainer}>
-          <Text style={styles.sectionTitle}>إجمالي الأذكار المحفوظة</Text>
+        <Animated.View style={[styles.totalsContainer, {opacity: fadeAnim}]}>
+          <Text style={styles.sectionTitle}>💾 إجمالي الأذكار المحفوظة</Text>
           {ADHKAR_LIST.map((dhikr, index) => {
             const total = totalCounts[dhikr] || 0;
             const current = currentCounts[dhikr] || 0;
@@ -401,15 +475,18 @@ const App = () => {
               </View>
             );
           })}
-        </View>
+        </Animated.View>
 
         {/* زر مسح البيانات */}
-        <TouchableOpacity
-          style={styles.clearButton}
-          onPress={clearAllData}
-        >
-          <Text style={styles.clearButtonText}>مسح جميع البيانات</Text>
-        </TouchableOpacity>
+        <Animated.View style={{opacity: fadeAnim}}>
+          <TouchableOpacity
+            style={styles.clearButton}
+            onPress={clearAllData}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.clearButtonText}>🗑️ مسح جميع البيانات</Text>
+          </TouchableOpacity>
+        </Animated.View>
 
         {/* مساحة إضافية في الأسفل */}
         <View style={styles.bottomSpacing} />
@@ -421,227 +498,273 @@ const App = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f0f4f8',
   },
   header: {
-    backgroundColor: '#0d7377',
-    paddingTop: 50,
-    paddingBottom: 30,
+    backgroundColor: '#0a7e8c',
+    paddingTop: Platform.OS === 'web' ? 30 : 50,
+    paddingBottom: 25,
     paddingHorizontal: 20,
     alignItems: 'center',
-    elevation: 4,
+    elevation: 8,
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: SCREEN_WIDTH < 360 ? 24 : 30,
     fontWeight: 'bold',
     color: '#ffffff',
     textAlign: 'center',
     marginBottom: 8,
+    letterSpacing: 0.5,
   },
   headerSubtitle: {
-    fontSize: 16,
-    color: '#e0f7fa',
+    fontSize: SCREEN_WIDTH < 360 ? 14 : 16,
+    color: '#b3e5fc',
     textAlign: 'center',
+    fontWeight: '500',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
+    padding: SCREEN_WIDTH < 360 ? 15 : 20,
+    paddingBottom: 40,
   },
   pickerContainer: {
     backgroundColor: '#ffffff',
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 20,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
+    borderRadius: 20,
+    padding: SCREEN_WIDTH < 360 ? 16 : 20,
+    marginBottom: 16,
+    elevation: 4,
+    shadowColor: '#0a7e8c',
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: SCREEN_WIDTH < 360 ? 18 : 22,
     fontWeight: 'bold',
-    color: '#0d7377',
+    color: '#0a7e8c',
     marginBottom: 15,
     textAlign: 'center',
   },
   pickerWrapper: {
-    backgroundColor: '#f0f0f0',
-    borderRadius: 10,
+    backgroundColor: '#f8fbfd',
+    borderRadius: 15,
     overflow: 'hidden',
     borderWidth: 2,
-    borderColor: '#0d7377',
+    borderColor: '#b3e5fc',
   },
   picker: {
     width: '100%',
     color: '#333',
   },
   pickerItem: {
-    fontSize: 20,
+    fontSize: SCREEN_WIDTH < 360 ? 18 : 20,
     textAlign: 'center',
   },
   pickerItemText: {
-    fontSize: 20,
+    fontSize: SCREEN_WIDTH < 360 ? 18 : 20,
   },
   dhikrDisplayContainer: {
-    backgroundColor: '#14ffec',
-    borderRadius: 15,
-    padding: 25,
-    marginBottom: 20,
+    backgroundColor: '#4dd0e1',
+    borderRadius: 25,
+    padding: SCREEN_WIDTH < 360 ? 20 : 28,
+    marginBottom: 16,
     alignItems: 'center',
-    elevation: 3,
-    shadowColor: '#0d7377',
-    shadowOffset: {width: 0, height: 2},
+    elevation: 6,
+    shadowColor: '#0a7e8c',
+    shadowOffset: {width: 0, height: 4},
     shadowOpacity: 0.3,
-    shadowRadius: 2.22,
+    shadowRadius: 8,
   },
   dhikrText: {
-    fontSize: 32,
+    fontSize: SCREEN_WIDTH < 360 ? 26 : 34,
     fontWeight: 'bold',
-    color: '#0d7377',
+    color: '#ffffff',
     textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.15)',
+    textShadowOffset: {width: 1, height: 1},
+    textShadowRadius: 3,
   },
   counterContainer: {
     backgroundColor: '#ffffff',
-    borderRadius: 15,
-    padding: 30,
-    marginBottom: 20,
+    borderRadius: 25,
+    padding: SCREEN_WIDTH < 360 ? 25 : 35,
+    marginBottom: 16,
     alignItems: 'center',
     borderWidth: 3,
-    borderColor: '#0d7377',
+    borderColor: '#4dd0e1',
+    elevation: 4,
+    shadowColor: '#0a7e8c',
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
   },
   counterLabel: {
-    fontSize: 20,
+    fontSize: SCREEN_WIDTH < 360 ? 16 : 20,
     color: '#666',
     marginBottom: 10,
+    fontWeight: '600',
   },
   counterValue: {
-    fontSize: 72,
+    fontSize: SCREEN_WIDTH < 360 ? 64 : 80,
     fontWeight: 'bold',
-    color: '#0d7377',
+    color: '#0a7e8c',
   },
   mainButton: {
-    backgroundColor: '#0d7377',
-    borderRadius: 20,
-    padding: 30,
+    backgroundColor: '#0a7e8c',
+    borderRadius: 30,
+    padding: SCREEN_WIDTH < 360 ? 25 : 35,
     alignItems: 'center',
-    marginBottom: 20,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.3,
-    shadowRadius: 3.84,
+    marginBottom: 16,
+    elevation: 8,
+    shadowColor: '#0a7e8c',
+    shadowOffset: {width: 0, height: 6},
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    overflow: 'hidden',
   },
   mainButtonText: {
-    fontSize: 36,
+    fontSize: SCREEN_WIDTH < 360 ? 32 : 40,
     fontWeight: 'bold',
     color: '#ffffff',
     marginBottom: 5,
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: {width: 1, height: 1},
+    textShadowRadius: 2,
   },
   mainButtonSubtext: {
-    fontSize: 16,
-    color: '#e0f7fa',
+    fontSize: SCREEN_WIDTH < 360 ? 14 : 16,
+    color: '#b3e5fc',
+    fontWeight: '500',
+  },
+  rippleCircle: {
+    position: 'absolute',
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#ffffff',
   },
   controlButtons: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   resetButton: {
     backgroundColor: '#ff9800',
-    borderRadius: 12,
-    padding: 15,
+    borderRadius: 20,
+    padding: SCREEN_WIDTH < 360 ? 14 : 16,
     alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#ff9800',
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
   },
   resetButtonText: {
-    fontSize: 18,
+    fontSize: SCREEN_WIDTH < 360 ? 16 : 18,
     fontWeight: 'bold',
     color: '#ffffff',
   },
   statisticsContainer: {
     backgroundColor: '#ffffff',
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 20,
-    elevation: 3,
-    shadowColor: '#0d7377',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.3,
-    shadowRadius: 2.22,
+    borderRadius: 20,
+    padding: SCREEN_WIDTH < 360 ? 16 : 20,
+    marginBottom: 16,
+    elevation: 4,
+    shadowColor: '#0a7e8c',
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
   },
   statsGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 15,
+    gap: 10,
   },
   statCard: {
     flex: 1,
     backgroundColor: '#e0f7fa',
-    borderRadius: 12,
-    padding: 15,
+    borderRadius: 16,
+    padding: SCREEN_WIDTH < 360 ? 12 : 16,
     alignItems: 'center',
-    marginHorizontal: 5,
     borderWidth: 2,
-    borderColor: '#0d7377',
+    borderColor: '#4dd0e1',
+    elevation: 2,
+    shadowColor: '#0a7e8c',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   statValue: {
-    fontSize: 36,
+    fontSize: SCREEN_WIDTH < 360 ? 32 : 40,
     fontWeight: 'bold',
-    color: '#0d7377',
+    color: '#0a7e8c',
     marginBottom: 5,
   },
   statLabel: {
-    fontSize: 14,
+    fontSize: SCREEN_WIDTH < 360 ? 12 : 14,
     color: '#666',
     textAlign: 'center',
+    fontWeight: '600',
   },
   mostUsedCard: {
-    backgroundColor: '#fff3cd',
-    borderRadius: 12,
-    padding: 15,
+    backgroundColor: '#fff9e6',
+    borderRadius: 16,
+    padding: SCREEN_WIDTH < 360 ? 14 : 18,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#ffc107',
+    borderColor: '#ffd54f',
+    elevation: 2,
+    shadowColor: '#ffb300',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   mostUsedLabel: {
-    fontSize: 16,
-    color: '#856404',
+    fontSize: SCREEN_WIDTH < 360 ? 14 : 16,
+    color: '#f57c00',
     fontWeight: 'bold',
     marginBottom: 8,
   },
   mostUsedDhikr: {
-    fontSize: 24,
+    fontSize: SCREEN_WIDTH < 360 ? 22 : 26,
     fontWeight: 'bold',
-    color: '#0d7377',
+    color: '#0a7e8c',
     marginBottom: 5,
   },
   mostUsedCount: {
-    fontSize: 18,
+    fontSize: SCREEN_WIDTH < 360 ? 16 : 18,
     color: '#666',
+    fontWeight: '600',
   },
   totalsContainer: {
     backgroundColor: '#ffffff',
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 20,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
+    borderRadius: 20,
+    padding: SCREEN_WIDTH < 360 ? 16 : 20,
+    marginBottom: 16,
+    elevation: 4,
+    shadowColor: '#0a7e8c',
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
   },
   totalItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 15,
+    paddingVertical: SCREEN_WIDTH < 360 ? 12 : 16,
     paddingHorizontal: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#e3f2fd',
+    backgroundColor: '#fafafa',
+    borderRadius: 12,
+    marginBottom: 8,
   },
   totalItemLeft: {
     flex: 1,
@@ -649,51 +772,61 @@ const styles = StyleSheet.create({
   totalItemRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
   totalDhikrName: {
-    fontSize: 18,
+    fontSize: SCREEN_WIDTH < 360 ? 16 : 18,
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 4,
   },
   currentCountText: {
-    fontSize: 14,
+    fontSize: SCREEN_WIDTH < 360 ? 12 : 14,
     color: '#666',
     fontStyle: 'italic',
   },
   totalCountBadge: {
-    backgroundColor: '#0d7377',
-    borderRadius: 20,
+    backgroundColor: '#0a7e8c',
+    borderRadius: 18,
     paddingVertical: 6,
-    paddingHorizontal: 15,
-    minWidth: 60,
+    paddingHorizontal: SCREEN_WIDTH < 360 ? 12 : 15,
+    minWidth: SCREEN_WIDTH < 360 ? 50 : 60,
     alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#0a7e8c',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   totalCountText: {
-    fontSize: 18,
+    fontSize: SCREEN_WIDTH < 360 ? 16 : 18,
     fontWeight: 'bold',
     color: '#ffffff',
   },
   percentageText: {
-    fontSize: 14,
-    color: '#0d7377',
+    fontSize: SCREEN_WIDTH < 360 ? 12 : 14,
+    color: '#0a7e8c',
     fontWeight: 'bold',
   },
   clearButton: {
-    backgroundColor: '#d32f2f',
-    borderRadius: 12,
-    padding: 15,
+    backgroundColor: '#e53935',
+    borderRadius: 20,
+    padding: SCREEN_WIDTH < 360 ? 14 : 16,
     alignItems: 'center',
     marginBottom: 10,
+    elevation: 4,
+    shadowColor: '#e53935',
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
   },
   clearButtonText: {
-    fontSize: 18,
+    fontSize: SCREEN_WIDTH < 360 ? 16 : 18,
     fontWeight: 'bold',
     color: '#ffffff',
   },
   bottomSpacing: {
-    height: 30,
+    height: 40,
   },
 });
 

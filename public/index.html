@@ -2,62 +2,136 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <meta name="theme-color" content="#0d7377" />
-    <meta name="description" content="تطبيق عداد الأذكار والتسبيح - Dhikr Counter App" />
-    <title>عداد الأذكار - Dhikr Counter</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes, viewport-fit=cover" />
+    <meta name="theme-color" content="#0a7e8c" />
+    <meta name="description" content="تطبيق عداد الأذكار والتسبيح - احفظ أورادك اليومية بسهولة | Beautiful Dhikr Counter App" />
+    <meta name="keywords" content="أذكار, تسبيح, dhikr, tasbih, islamic, prayer counter" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <title>✨ عداد الأذكار - Dhikr Counter</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
         }
         
         body {
-            margin: 0;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
                 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-                sans-serif;
+                'Noto Sans Arabic', 'Arial', sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            overflow-x: hidden;
+            background: linear-gradient(135deg, #f0f4f8 0%, #e0f7fa 100%);
+            touch-action: manipulation;
         }
         
         #root {
             width: 100%;
-            height: 100vh;
+            height: 100%;
+            position: relative;
             overflow: hidden;
         }
         
-        /* Loading spinner */
+        /* Loading animation */
         .loading {
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            background-color: #f5f5f5;
+            height: 100%;
+            background: linear-gradient(135deg, #0a7e8c 0%, #4dd0e1 100%);
         }
         
         .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #0d7377;
+            width: 60px;
+            height: 60px;
+            border: 6px solid rgba(255, 255, 255, 0.3);
+            border-top: 6px solid #ffffff;
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+        }
+        
+        .loading-text {
+            margin-top: 20px;
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: 600;
+            animation: pulse 1.5s ease-in-out infinite;
         }
         
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
+        /* Prevent scrolling on mobile */
+        body.no-scroll {
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            body {
+                font-size: 16px;
+            }
+            
+            .spinner {
+                width: 50px;
+                height: 50px;
+                border-width: 5px;
+            }
+            
+            .loading-text {
+                font-size: 16px;
+            }
+        }
+        
+        @media (max-width: 360px) {
+            body {
+                font-size: 14px;
+            }
+            
+            .spinner {
+                width: 40px;
+                height: 40px;
+                border-width: 4px;
+            }
+            
+            .loading-text {
+                font-size: 14px;
+            }
+        }
     </style>
 </head>
 <body>
-    <noscript>يجب تفعيل JavaScript لتشغيل هذا التطبيق. You need to enable JavaScript to run this app.</noscript>
+    <noscript>
+        <div style="text-align: center; padding: 20px; font-size: 18px; color: #333;">
+            يجب تفعيل JavaScript لتشغيل هذا التطبيق.<br/>
+            You need to enable JavaScript to run this app.
+        </div>
+    </noscript>
     <div id="root">
         <div class="loading">
             <div class="spinner"></div>
+            <div class="loading-text">✨ جاري التحميل...</div>
         </div>
     </div>
 </body>
