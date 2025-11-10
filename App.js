@@ -902,6 +902,8 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     paddingHorizontal: 10,
     gap: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   languageButton: {
     paddingVertical: 8,
