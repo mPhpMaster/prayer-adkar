@@ -168,55 +168,82 @@ const App = () => {
    * إعادة تعيين العداد الحالي فقط للذكر المحدد
    */
   const resetCurrentCounter = () => {
-    Alert.alert(
-      'إعادة تعيين العداد',
-      'هل تريد إعادة تعيين العداد الحالي لـ ' + selectedDhikr + '؟',
-      [
-        {
-          text: 'إلغاء',
-          style: 'cancel',
-        },
-        {
-          text: 'إعادة تعيين',
-          onPress: () => {
-            setCurrentCounts(prevCounts => ({
-              ...prevCounts,
-              [selectedDhikr]: 0,
-            }));
+    // For web compatibility, use window.confirm instead of Alert.alert
+    if (typeof window !== 'undefined' && window.confirm) {
+      const confirmed = window.confirm('هل تريد إعادة تعيين العداد الحالي لـ ' + selectedDhikr + '؟');
+      if (confirmed) {
+        setCurrentCounts(prevCounts => ({
+          ...prevCounts,
+          [selectedDhikr]: 0,
+        }));
+      }
+    } else {
+      // Fallback for React Native
+      Alert.alert(
+        'إعادة تعيين العداد',
+        'هل تريد إعادة تعيين العداد الحالي لـ ' + selectedDhikr + '؟',
+        [
+          {
+            text: 'إلغاء',
+            style: 'cancel',
           },
-          style: 'destructive',
-        },
-      ],
-    );
+          {
+            text: 'إعادة تعيين',
+            onPress: () => {
+              setCurrentCounts(prevCounts => ({
+                ...prevCounts,
+                [selectedDhikr]: 0,
+              }));
+            },
+            style: 'destructive',
+          },
+        ],
+      );
+    }
   };
 
   /**
    * مسح جميع البيانات المحفوظة
    */
   const clearAllData = () => {
-    Alert.alert(
-      'مسح جميع البيانات',
-      'هل أنت متأكد من مسح جميع البيانات المحفوظة؟ لا يمكن التراجع عن هذا الإجراء.',
-      [
-        {
-          text: 'إلغاء',
-          style: 'cancel',
-        },
-        {
-          text: 'مسح الكل',
-          onPress: () => {
-            const resetCounts = {};
-            ADHKAR_LIST.forEach(dhikr => {
-              resetCounts[dhikr] = 0;
-            });
-            setTotalCounts(resetCounts);
-            setCurrentCounts(resetCounts);
-            Alert.alert('تم', 'تم مسح جميع البيانات بنجاح');
+    // For web compatibility
+    if (typeof window !== 'undefined' && window.confirm) {
+      const confirmed = window.confirm('هل أنت متأكد من مسح جميع البيانات المحفوظة؟ لا يمكن التراجع عن هذا الإجراء.');
+      if (confirmed) {
+        const resetCounts = {};
+        ADHKAR_LIST.forEach(dhikr => {
+          resetCounts[dhikr] = 0;
+        });
+        setTotalCounts(resetCounts);
+        setCurrentCounts(resetCounts);
+        window.alert('تم مسح جميع البيانات بنجاح');
+      }
+    } else {
+      // Fallback for React Native
+      Alert.alert(
+        'مسح جميع البيانات',
+        'هل أنت متأكد من مسح جميع البيانات المحفوظة؟ لا يمكن التراجع عن هذا الإجراء.',
+        [
+          {
+            text: 'إلغاء',
+            style: 'cancel',
           },
-          style: 'destructive',
-        },
-      ],
-    );
+          {
+            text: 'مسح الكل',
+            onPress: () => {
+              const resetCounts = {};
+              ADHKAR_LIST.forEach(dhikr => {
+                resetCounts[dhikr] = 0;
+              });
+              setTotalCounts(resetCounts);
+              setCurrentCounts(resetCounts);
+              Alert.alert('تم', 'تم مسح جميع البيانات بنجاح');
+            },
+            style: 'destructive',
+          },
+        ],
+      );
+    }
   };
 
   /**
@@ -226,6 +253,36 @@ const App = () => {
     setSelectedDhikr(dhikr);
     // لا حاجة لإعادة تعيين العداد - كل ذكر يحفظ عداده الخاص
   };
+
+  /**
+   * حساب إحصائيات الأذكار
+   */
+  const calculateStatistics = () => {
+    // إجمالي جميع الأذكار
+    const totalAll = Object.values(totalCounts).reduce((sum, count) => sum + count, 0);
+    
+    // إجمالي العدادات الحالية
+    const currentAll = Object.values(currentCounts).reduce((sum, count) => sum + count, 0);
+    
+    // الذكر الأكثر استخداماً
+    let mostUsedDhikr = ADHKAR_LIST[0];
+    let maxCount = totalCounts[mostUsedDhikr] || 0;
+    ADHKAR_LIST.forEach(dhikr => {
+      if ((totalCounts[dhikr] || 0) > maxCount) {
+        maxCount = totalCounts[dhikr] || 0;
+        mostUsedDhikr = dhikr;
+      }
+    });
+    
+    return {
+      totalAll,
+      currentAll,
+      mostUsedDhikr,
+      maxCount,
+    };
+  };
+  
+  const stats = calculateStatistics();
 
   return (
     <View style={styles.container}>
@@ -294,19 +351,56 @@ const App = () => {
           </TouchableOpacity>
         </View>
 
+        {/* قسم الإحصائيات */}
+        <View style={styles.statisticsContainer}>
+          <Text style={styles.sectionTitle}>📊 الإحصائيات</Text>
+          
+          <View style={styles.statsGrid}>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{stats.totalAll}</Text>
+              <Text style={styles.statLabel}>إجمالي جميع الأذكار</Text>
+            </View>
+            
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{stats.currentAll}</Text>
+              <Text style={styles.statLabel}>الجلسة الحالية</Text>
+            </View>
+          </View>
+          
+          {stats.maxCount > 0 && (
+            <View style={styles.mostUsedCard}>
+              <Text style={styles.mostUsedLabel}>🏆 الأكثر استخداماً</Text>
+              <Text style={styles.mostUsedDhikr}>{stats.mostUsedDhikr}</Text>
+              <Text style={styles.mostUsedCount}>{stats.maxCount} مرة</Text>
+            </View>
+          )}
+        </View>
+
         {/* عرض الإجماليات */}
         <View style={styles.totalsContainer}>
           <Text style={styles.sectionTitle}>إجمالي الأذكار المحفوظة</Text>
-          {ADHKAR_LIST.map((dhikr, index) => (
-            <View key={index} style={styles.totalItem}>
-              <Text style={styles.totalDhikrName}>{dhikr}</Text>
-              <View style={styles.totalCountBadge}>
-                <Text style={styles.totalCountText}>
-                  {totalCounts[dhikr]}
-                </Text>
+          {ADHKAR_LIST.map((dhikr, index) => {
+            const total = totalCounts[dhikr] || 0;
+            const current = currentCounts[dhikr] || 0;
+            const percentage = stats.totalAll > 0 ? Math.round((total / stats.totalAll) * 100) : 0;
+            
+            return (
+              <View key={index} style={styles.totalItem}>
+                <View style={styles.totalItemLeft}>
+                  <Text style={styles.totalDhikrName}>{dhikr}</Text>
+                  <Text style={styles.currentCountText}>جلسة حالية: {current}</Text>
+                </View>
+                <View style={styles.totalItemRight}>
+                  <View style={styles.totalCountBadge}>
+                    <Text style={styles.totalCountText}>{total}</Text>
+                  </View>
+                  {percentage > 0 && (
+                    <Text style={styles.percentageText}>{percentage}%</Text>
+                  )}
+                </View>
               </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
 
         {/* زر مسح البيانات */}
@@ -468,6 +562,67 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#ffffff',
   },
+  statisticsContainer: {
+    backgroundColor: '#ffffff',
+    borderRadius: 15,
+    padding: 20,
+    marginBottom: 20,
+    elevation: 3,
+    shadowColor: '#0d7377',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.3,
+    shadowRadius: 2.22,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: '#e0f7fa',
+    borderRadius: 12,
+    padding: 15,
+    alignItems: 'center',
+    marginHorizontal: 5,
+    borderWidth: 2,
+    borderColor: '#0d7377',
+  },
+  statValue: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#0d7377',
+    marginBottom: 5,
+  },
+  statLabel: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+  },
+  mostUsedCard: {
+    backgroundColor: '#fff3cd',
+    borderRadius: 12,
+    padding: 15,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#ffc107',
+  },
+  mostUsedLabel: {
+    fontSize: 16,
+    color: '#856404',
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  mostUsedDhikr: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#0d7377',
+    marginBottom: 5,
+  },
+  mostUsedCount: {
+    fontSize: 18,
+    color: '#666',
+  },
   totalsContainer: {
     backgroundColor: '#ffffff',
     borderRadius: 15,
@@ -483,15 +638,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 15,
     paddingHorizontal: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
+  totalItemLeft: {
+    flex: 1,
+  },
+  totalItemRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   totalDhikrName: {
     fontSize: 18,
+    fontWeight: 'bold',
     color: '#333',
-    flex: 1,
+    marginBottom: 4,
+  },
+  currentCountText: {
+    fontSize: 14,
+    color: '#666',
+    fontStyle: 'italic',
   },
   totalCountBadge: {
     backgroundColor: '#0d7377',
@@ -505,6 +674,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#ffffff',
+  },
+  percentageText: {
+    fontSize: 14,
+    color: '#0d7377',
+    fontWeight: 'bold',
   },
   clearButton: {
     backgroundColor: '#d32f2f',
