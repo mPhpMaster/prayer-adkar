@@ -651,9 +651,87 @@ const App = () => {
     </ScrollView>
   );
 
+  /**
+   * Render Islamic Theme Background Elements
+   */
+  const renderIslamicBackground = () => {
+    if (Platform.OS === 'web') {
+      return (
+        <div className="islamic-background">
+          {/* Stars Container */}
+          <div className="stars-container">
+            {[...Array(50)].map((_, i) => (
+              <div
+                key={i}
+                className="star"
+                style={{
+                  top: `${Math.random() * 100}%`,
+                  left: `${Math.random() * 100}%`,
+                  animationDelay: `${Math.random() * 3}s`,
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Shooting Stars */}
+          <div className="shooting-star"></div>
+          <div className="shooting-star"></div>
+          <div className="shooting-star"></div>
+          <div className="shooting-star"></div>
+
+          {/* Galaxy Particles */}
+          {[...Array(20)].map((_, i) => (
+            <div
+              key={i}
+              className="galaxy-particle"
+              style={{
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 10}s`,
+              }}
+            />
+          ))}
+
+          {/* Glowing Moon */}
+          <div className="moon"></div>
+
+          {/* Crescent Moon */}
+          <div className="crescent"></div>
+
+          {/* Sparkles */}
+          {[...Array(10)].map((_, i) => (
+            <div
+              key={i}
+              className="sparkle"
+              style={{
+                top: `${20 + Math.random() * 60}%`,
+                left: `${10 + Math.random() * 80}%`,
+                animationDelay: `${Math.random() * 2}s`,
+              }}
+            />
+          ))}
+
+          {/* Islamic Pattern Overlay */}
+          <div className="islamic-pattern"></div>
+
+          {/* Mosque Silhouette */}
+          <div className="mosque-silhouette">
+            <div className="mosque-dome"></div>
+            <div className="mosque-minaret mosque-minaret-left"></div>
+            <div className="mosque-minaret mosque-minaret-right"></div>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0a5f5f" />
+      <StatusBar barStyle="light-content" backgroundColor="#0a0e27" />
+      
+      {/* Islamic Theme Background */}
+      {renderIslamicBackground()}
       
       {/* شريط العنوان */}
       <Animated.View style={[styles.header, {opacity: fadeAnim}]}>
@@ -695,19 +773,19 @@ const App = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f4f8',
+    backgroundColor: '#0a0e27',
   },
   header: {
-    backgroundColor: '#0a7e8c',
+    backgroundColor: 'rgba(30, 58, 95, 0.95)',
     paddingTop: Platform.OS === 'web' ? 30 : 50,
     paddingBottom: 25,
     paddingHorizontal: 20,
     alignItems: 'center',
     elevation: 8,
-    shadowColor: '#000',
+    shadowColor: '#4dd0e1',
     shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
   },
@@ -737,7 +815,7 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: SCREEN_WIDTH < 360 ? 14 : 16,
-    color: '#b3e5fc',
+    color: '#ffd700',
     textAlign: 'center',
     fontWeight: '500',
   },
@@ -764,18 +842,18 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
-    backgroundColor: '#ffffff',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderWidth: 2,
-    borderColor: '#e0e0e0',
+    borderColor: 'rgba(77, 208, 225, 0.3)',
   },
   languageButtonActive: {
-    backgroundColor: '#0a7e8c',
-    borderColor: '#0a7e8c',
+    backgroundColor: 'rgba(77, 208, 225, 0.3)',
+    borderColor: '#4dd0e1',
   },
   languageButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
+    color: '#b0c4de',
   },
   languageButtonTextActive: {
     color: '#ffffff',
@@ -788,9 +866,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: SCREEN_WIDTH < 360 ? 18 : 22,
     fontWeight: 'bold',
-    color: '#0a7e8c',
+    color: '#4dd0e1',
     marginBottom: 15,
     textAlign: 'center',
+    textShadowColor: 'rgba(77, 208, 225, 0.5)',
+    textShadowOffset: {width: 0, height: 2},
+    textShadowRadius: 8,
   },
   // Desktop: Grid layout
   dhikrGridContainer: {
@@ -803,18 +884,18 @@ const styles = StyleSheet.create({
   dhikrCardDesktop: {
     width: SCREEN_WIDTH >= 1024 ? 180 : 160,
     height: 100,
-    backgroundColor: '#ffffff',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 20,
     padding: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#e0e0e0',
-    elevation: 3,
-    shadowColor: '#0a7e8c',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(77, 208, 225, 0.3)',
+    elevation: 8,
+    shadowColor: '#4dd0e1',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
     position: 'relative',
   },
   // Mobile: Horizontal scroll
@@ -825,32 +906,33 @@ const styles = StyleSheet.create({
   dhikrCard: {
     width: SCREEN_WIDTH < 360 ? 140 : 160,
     height: 100,
-    backgroundColor: '#ffffff',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 20,
     padding: 16,
     marginRight: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#e0e0e0',
-    elevation: 3,
-    shadowColor: '#0a7e8c',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(77, 208, 225, 0.3)',
+    elevation: 8,
+    shadowColor: '#4dd0e1',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
     position: 'relative',
   },
   dhikrCardActive: {
-    backgroundColor: '#4dd0e1',
-    borderColor: '#0a7e8c',
-    borderWidth: 3,
-    elevation: 6,
-    shadowOpacity: 0.25,
+    backgroundColor: 'rgba(77, 208, 225, 0.3)',
+    borderColor: '#4dd0e1',
+    borderWidth: 2,
+    elevation: 12,
+    shadowColor: '#4dd0e1',
+    shadowOpacity: 0.6,
   },
   dhikrCardText: {
     fontSize: SCREEN_WIDTH < 360 ? 14 : 16,
     fontWeight: '600',
-    color: '#333',
+    color: '#e0f7fa',
     textAlign: 'center',
   },
   dhikrCardTextActive: {
@@ -864,78 +946,85 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#0a7e8c',
+    backgroundColor: '#ffd700',
     justifyContent: 'center',
     alignItems: 'center',
   },
   dhikrCardCheckIcon: {
-    color: '#ffffff',
+    color: '#0a0e27',
     fontSize: 14,
     fontWeight: 'bold',
   },
   
   // Dhikr Display
   dhikrDisplayContainer: {
-    backgroundColor: '#4dd0e1',
+    backgroundColor: 'rgba(77, 208, 225, 0.15)',
     borderRadius: 25,
     padding: SCREEN_WIDTH < 360 ? 20 : 28,
     marginBottom: 16,
     alignItems: 'center',
-    elevation: 6,
-    shadowColor: '#0a7e8c',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.4)',
+    elevation: 8,
+    shadowColor: '#ffd700',
     shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
   },
   dhikrText: {
     fontSize: SCREEN_WIDTH < 360 ? 24 : 30,
     fontWeight: 'bold',
     color: '#ffffff',
     textAlign: 'center',
-    textShadowColor: 'rgba(0, 0, 0, 0.15)',
-    textShadowOffset: {width: 1, height: 1},
-    textShadowRadius: 3,
+    textShadowColor: 'rgba(77, 208, 225, 0.5)',
+    textShadowOffset: {width: 0, height: 2},
+    textShadowRadius: 8,
   },
   
   // Counter
   counterContainer: {
-    backgroundColor: '#ffffff',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 25,
     padding: SCREEN_WIDTH < 360 ? 25 : 35,
     marginBottom: 16,
     alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#4dd0e1',
-    elevation: 4,
-    shadowColor: '#0a7e8c',
-    shadowOffset: {width: 0, height: 3},
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
+    borderWidth: 2,
+    borderColor: 'rgba(77, 208, 225, 0.5)',
+    elevation: 10,
+    shadowColor: '#4dd0e1',
+    shadowOffset: {width: 0, height: 6},
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
   },
   counterLabel: {
     fontSize: SCREEN_WIDTH < 360 ? 16 : 20,
-    color: '#666',
+    color: '#b3e5fc',
     marginBottom: 10,
     fontWeight: '600',
   },
   counterValue: {
     fontSize: SCREEN_WIDTH < 360 ? 64 : 80,
     fontWeight: 'bold',
-    color: '#0a7e8c',
+    color: '#ffd700',
+    textShadowColor: 'rgba(255, 215, 0, 0.5)',
+    textShadowOffset: {width: 0, height: 2},
+    textShadowRadius: 10,
   },
   
   // Main Button
   mainButton: {
-    backgroundColor: '#0a7e8c',
+    backgroundColor: 'rgba(77, 208, 225, 0.3)',
     borderRadius: 30,
     padding: SCREEN_WIDTH < 360 ? 25 : 35,
     alignItems: 'center',
     marginBottom: 16,
-    elevation: 8,
-    shadowColor: '#0a7e8c',
-    shadowOffset: {width: 0, height: 6},
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
+    borderWidth: 2,
+    borderColor: '#4dd0e1',
+    elevation: 12,
+    shadowColor: '#4dd0e1',
+    shadowOffset: {width: 0, height: 8},
+    shadowOpacity: 0.6,
+    shadowRadius: 15,
     overflow: 'hidden',
   },
   mainButtonText: {
@@ -966,15 +1055,17 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   resetButton: {
-    backgroundColor: '#ff9800',
+    backgroundColor: 'rgba(255, 152, 0, 0.3)',
     borderRadius: 20,
     padding: SCREEN_WIDTH < 360 ? 14 : 16,
     alignItems: 'center',
-    elevation: 4,
+    borderWidth: 2,
+    borderColor: '#ff9800',
+    elevation: 6,
     shadowColor: '#ff9800',
-    shadowOffset: {width: 0, height: 3},
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
   },
   resetButtonText: {
     fontSize: SCREEN_WIDTH < 360 ? 16 : 18,
@@ -982,15 +1073,17 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   statsButton: {
-    backgroundColor: '#4caf50',
+    backgroundColor: 'rgba(76, 175, 80, 0.3)',
     borderRadius: 20,
     padding: SCREEN_WIDTH < 360 ? 14 : 16,
     alignItems: 'center',
-    elevation: 4,
+    borderWidth: 2,
+    borderColor: '#4caf50',
+    elevation: 6,
     shadowColor: '#4caf50',
-    shadowOffset: {width: 0, height: 3},
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
   },
   statsButtonText: {
     fontSize: SCREEN_WIDTH < 360 ? 16 : 18,
@@ -998,16 +1091,18 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   clearButton: {
-    backgroundColor: '#e53935',
+    backgroundColor: 'rgba(229, 57, 53, 0.3)',
     borderRadius: 20,
     padding: SCREEN_WIDTH < 360 ? 14 : 16,
     alignItems: 'center',
     marginBottom: 10,
-    elevation: 4,
+    borderWidth: 2,
+    borderColor: '#e53935',
+    elevation: 6,
     shadowColor: '#e53935',
-    shadowOffset: {width: 0, height: 3},
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
   },
   clearButtonText: {
     fontSize: SCREEN_WIDTH < 360 ? 16 : 18,
@@ -1017,16 +1112,18 @@ const styles = StyleSheet.create({
   
   // Statistics View
   backButton: {
-    backgroundColor: '#0a7e8c',
+    backgroundColor: 'rgba(77, 208, 225, 0.3)',
     borderRadius: 15,
     padding: 12,
     marginBottom: 20,
     alignItems: 'center',
-    elevation: 3,
-    shadowColor: '#0a7e8c',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    borderWidth: 2,
+    borderColor: '#4dd0e1',
+    elevation: 6,
+    shadowColor: '#4dd0e1',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
   },
   backButtonText: {
     fontSize: 16,
@@ -1034,15 +1131,17 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   statisticsContainer: {
-    backgroundColor: '#ffffff',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 20,
     padding: SCREEN_WIDTH < 360 ? 16 : 20,
     marginBottom: 16,
-    elevation: 4,
-    shadowColor: '#0a7e8c',
-    shadowOffset: {width: 0, height: 3},
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(77, 208, 225, 0.3)',
+    elevation: 6,
+    shadowColor: '#4dd0e1',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -1052,71 +1151,76 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#e0f7fa',
+    backgroundColor: 'rgba(77, 208, 225, 0.15)',
     borderRadius: 16,
     padding: SCREEN_WIDTH < 360 ? 12 : 16,
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#4dd0e1',
-    elevation: 2,
-    shadowColor: '#0a7e8c',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(77, 208, 225, 0.4)',
+    elevation: 4,
+    shadowColor: '#4dd0e1',
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
   },
   statValue: {
     fontSize: SCREEN_WIDTH < 360 ? 32 : 40,
     fontWeight: 'bold',
-    color: '#0a7e8c',
+    color: '#ffd700',
     marginBottom: 5,
+    textShadowColor: 'rgba(255, 215, 0, 0.5)',
+    textShadowOffset: {width: 0, height: 2},
+    textShadowRadius: 6,
   },
   statLabel: {
     fontSize: SCREEN_WIDTH < 360 ? 12 : 14,
-    color: '#666',
+    color: '#b3e5fc',
     textAlign: 'center',
     fontWeight: '600',
   },
   mostUsedCard: {
-    backgroundColor: '#fff9e6',
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
     borderRadius: 16,
     padding: SCREEN_WIDTH < 360 ? 14 : 18,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#ffd54f',
-    elevation: 2,
-    shadowColor: '#ffb300',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    borderColor: '#ffd700',
+    elevation: 6,
+    shadowColor: '#ffd700',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
   },
   mostUsedLabel: {
     fontSize: SCREEN_WIDTH < 360 ? 14 : 16,
-    color: '#f57c00',
+    color: '#ffd700',
     fontWeight: 'bold',
     marginBottom: 8,
   },
   mostUsedDhikr: {
     fontSize: SCREEN_WIDTH < 360 ? 20 : 24,
     fontWeight: 'bold',
-    color: '#0a7e8c',
+    color: '#ffffff',
     marginBottom: 5,
     textAlign: 'center',
   },
   mostUsedCount: {
     fontSize: SCREEN_WIDTH < 360 ? 16 : 18,
-    color: '#666',
+    color: '#b3e5fc',
     fontWeight: '600',
   },
   totalsContainer: {
-    backgroundColor: '#ffffff',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 20,
     padding: SCREEN_WIDTH < 360 ? 16 : 20,
     marginBottom: 16,
-    elevation: 4,
-    shadowColor: '#0a7e8c',
-    shadowOffset: {width: 0, height: 3},
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(77, 208, 225, 0.3)',
+    elevation: 6,
+    shadowColor: '#4dd0e1',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   totalItem: {
     flexDirection: 'row',
@@ -1125,8 +1229,8 @@ const styles = StyleSheet.create({
     paddingVertical: SCREEN_WIDTH < 360 ? 12 : 16,
     paddingHorizontal: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#e3f2fd',
-    backgroundColor: '#fafafa',
+    borderBottomColor: 'rgba(77, 208, 225, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 12,
     marginBottom: 8,
   },
@@ -1141,26 +1245,28 @@ const styles = StyleSheet.create({
   totalDhikrName: {
     fontSize: SCREEN_WIDTH < 360 ? 14 : 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#e0f7fa',
     marginBottom: 4,
   },
   currentCountText: {
     fontSize: SCREEN_WIDTH < 360 ? 12 : 14,
-    color: '#666',
+    color: '#b0c4de',
     fontStyle: 'italic',
   },
   totalCountBadge: {
-    backgroundColor: '#0a7e8c',
+    backgroundColor: 'rgba(77, 208, 225, 0.3)',
     borderRadius: 18,
     paddingVertical: 6,
     paddingHorizontal: SCREEN_WIDTH < 360 ? 12 : 15,
     minWidth: SCREEN_WIDTH < 360 ? 50 : 60,
     alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#0a7e8c',
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
+    borderWidth: 1,
+    borderColor: '#4dd0e1',
+    elevation: 3,
+    shadowColor: '#4dd0e1',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
   },
   totalCountText: {
     fontSize: SCREEN_WIDTH < 360 ? 16 : 18,
@@ -1169,7 +1275,7 @@ const styles = StyleSheet.create({
   },
   percentageText: {
     fontSize: SCREEN_WIDTH < 360 ? 12 : 14,
-    color: '#0a7e8c',
+    color: '#ffd700',
     fontWeight: 'bold',
   },
   bottomSpacing: {

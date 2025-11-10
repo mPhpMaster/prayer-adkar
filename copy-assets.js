@@ -8,7 +8,8 @@ const distDir = path.join(__dirname, 'dist');
 // Files to copy
 const filesToCopy = [
   'prayer-icon.svg',
-  'manifest.json'
+  'manifest.json',
+  'islamic-theme.css'
 ];
 
 console.log('📦 Copying public assets to dist...\n');

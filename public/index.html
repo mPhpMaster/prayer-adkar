@@ -12,6 +12,7 @@
     <link rel="icon" type="image/svg+xml" href="prayer-icon.svg" />
     <link rel="apple-touch-icon" href="prayer-icon.svg" />
     <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="islamic-theme.css" />
     <title>ADHKAR - أذكار</title>
     <style>
         * {
@@ -35,8 +36,9 @@
                 'Noto Sans Arabic', 'Arial', sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            background: linear-gradient(135deg, #f0f4f8 0%, #e0f7fa 100%);
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1d3e 25%, #2d1b4e 50%, #1e3a5f 75%, #0f2537 100%);
             touch-action: manipulation;
+            overflow-x: hidden;
         }
         
         #root {
@@ -53,7 +55,23 @@
             justify-content: center;
             align-items: center;
             height: 100%;
-            background: linear-gradient(135deg, #0a7e8c 0%, #4dd0e1 100%);
+            background: linear-gradient(135deg, #0a0e27 0%, #1e3a5f 50%, #2d1b4e 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .loading::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(2px 2px at 20% 30%, white, transparent),
+                              radial-gradient(2px 2px at 60% 70%, white, transparent),
+                              radial-gradient(1px 1px at 50% 50%, white, transparent),
+                              radial-gradient(1px 1px at 80% 10%, white, transparent),
+                              radial-gradient(2px 2px at 90% 60%, white, transparent);
+            background-size: 200% 200%;
+            animation: twinkle 3s ease-in-out infinite;
         }
         
         .spinner {
@@ -140,11 +158,34 @@
     </noscript>
     <div id="root">
         <div class="loading">
-            <img src="prayer-icon.svg" alt="ADHKAR" class="loading-icon" />
-            <div class="spinner"></div>
-            <div class="loading-text">ADHKAR - أذكار</div>
-            <div class="loading-text" style="font-size: 14px; margin-top: 5px;">✨ جاري التحميل...</div>
+            <!-- Moon -->
+            <div style="position: absolute; top: 10%; right: 10%; width: 60px; height: 60px; background: radial-gradient(circle at 30% 30%, #fff, #e0e0e0); border-radius: 50%; box-shadow: 0 0 30px rgba(255,255,255,0.6), 0 0 60px rgba(255,255,255,0.4);"></div>
+            
+            <!-- Shooting Stars -->
+            <div style="position: absolute; top: 20%; right: 30%; width: 2px; height: 2px; background: white; box-shadow: 0 0 10px white; animation: shoot 3s linear infinite;"></div>
+            <div style="position: absolute; top: 40%; right: 60%; width: 2px; height: 2px; background: white; box-shadow: 0 0 10px white; animation: shoot 3s linear infinite; animation-delay: 1.5s;"></div>
+            
+            <img src="prayer-icon.svg" alt="ADHKAR" class="loading-icon" style="animation: float 3s ease-in-out infinite; position: relative; z-index: 2;" />
+            <div class="spinner" style="position: relative; z-index: 2;"></div>
+            <div class="loading-text" style="position: relative; z-index: 2;">ADHKAR - أذكار</div>
+            <div class="loading-text" style="font-size: 14px; margin-top: 5px; position: relative; z-index: 2;">✨ جاري التحميل...</div>
         </div>
     </div>
+    
+    <script>
+        // Add shooting star animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shoot {
+                0% { transform: translate(0, 0) rotate(-45deg); opacity: 1; }
+                100% { transform: translate(-300px, 300px) rotate(-45deg); opacity: 0; }
+            }
+            @keyframes float {
+                0%, 100% { transform: translateY(0px); }
+                50% { transform: translateY(-20px); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
 </body>
 </html>
