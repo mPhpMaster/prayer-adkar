@@ -34,13 +34,12 @@ const ADHKAR_LIST = [
   'لا حول ولا قوة إلا بالله',
 ];
 
-// مفتاح التخزين المحلي
-const STORAGE_KEY = '@dhikr_counter_data';
+// مفاتيح التخزين المحلي
+const STORAGE_KEY_TOTALS = '@dhikr_counter_totals';
+const STORAGE_KEY_CURRENT = '@dhikr_counter_current';
+const STORAGE_KEY_SELECTED = '@dhikr_counter_selected';
 
 const App = () => {
-  // العداد الحالي للذكر المختار
-  const [currentCount, setCurrentCount] = useState(0);
-  
   // الذكر المختار حالياً
   const [selectedDhikr, setSelectedDhikr] = useState(ADHKAR_LIST[0]);
   
@@ -52,6 +51,18 @@ const App = () => {
     });
     return initial;
   });
+  
+  // العداد الحالي لكل ذكر - يحفظ العداد الحالي لكل ذكر على حدة
+  const [currentCounts, setCurrentCounts] = useState(() => {
+    const initial = {};
+    ADHKAR_LIST.forEach(dhikr => {
+      initial[dhikr] = 0;
+    });
+    return initial;
+  });
+  
+  // العداد الحالي للذكر المختار
+  const currentCount = currentCounts[selectedDhikr] || 0;
 
   /**
    * تحميل البيانات المحفوظة عند بدء التطبيق
@@ -65,17 +76,41 @@ const App = () => {
    */
   useEffect(() => {
     saveData();
-  }, [totalCounts]);
+  }, [totalCounts, currentCounts]);
+  
+  /**
+   * حفظ الذكر المختار عند تغييره
+   */
+  useEffect(() => {
+    saveSelectedDhikr();
+  }, [selectedDhikr]);
 
   /**
    * تحميل البيانات من التخزين المحلي
    */
   const loadData = async () => {
     try {
-      const jsonValue = await AsyncStorage.getItem(STORAGE_KEY);
-      if (jsonValue != null) {
-        const loadedData = JSON.parse(jsonValue);
-        setTotalCounts(loadedData);
+      // تحميل الإجماليات
+      const totalsJson = await AsyncStorage.getItem(STORAGE_KEY_TOTALS);
+      if (totalsJson != null) {
+        const loadedTotals = JSON.parse(totalsJson);
+        setTotalCounts(loadedTotals);
+      }
+      
+      // تحميل العدادات الحالية
+      const currentJson = await AsyncStorage.getItem(STORAGE_KEY_CURRENT);
+      if (currentJson != null) {
+        const loadedCurrent = JSON.parse(currentJson);
+        setCurrentCounts(loadedCurrent);
+      }
+      
+      // تحميل الذكر المختار
+      const selectedJson = await AsyncStorage.getItem(STORAGE_KEY_SELECTED);
+      if (selectedJson != null) {
+        const loadedSelected = JSON.parse(selectedJson);
+        if (ADHKAR_LIST.includes(loadedSelected)) {
+          setSelectedDhikr(loadedSelected);
+        }
       }
     } catch (error) {
       console.error('خطأ في تحميل البيانات:', error);
@@ -88,10 +123,27 @@ const App = () => {
    */
   const saveData = async () => {
     try {
-      const jsonValue = JSON.stringify(totalCounts);
-      await AsyncStorage.setItem(STORAGE_KEY, jsonValue);
+      // حفظ الإجماليات
+      const totalsJson = JSON.stringify(totalCounts);
+      await AsyncStorage.setItem(STORAGE_KEY_TOTALS, totalsJson);
+      
+      // حفظ العدادات الحالية
+      const currentJson = JSON.stringify(currentCounts);
+      await AsyncStorage.setItem(STORAGE_KEY_CURRENT, currentJson);
     } catch (error) {
       console.error('خطأ في حفظ البيانات:', error);
+    }
+  };
+  
+  /**
+   * حفظ الذكر المختار
+   */
+  const saveSelectedDhikr = async () => {
+    try {
+      const jsonValue = JSON.stringify(selectedDhikr);
+      await AsyncStorage.setItem(STORAGE_KEY_SELECTED, jsonValue);
+    } catch (error) {
+      console.error('خطأ في حفظ الذكر المختار:', error);
     }
   };
 
@@ -99,8 +151,11 @@ const App = () => {
    * زيادة العداد عند الضغط على الزر
    */
   const incrementCounter = () => {
-    // زيادة العداد الحالي
-    setCurrentCount(currentCount + 1);
+    // زيادة العداد الحالي للذكر المحدد
+    setCurrentCounts(prevCounts => ({
+      ...prevCounts,
+      [selectedDhikr]: (prevCounts[selectedDhikr] || 0) + 1,
+    }));
     
     // زيادة الإجمالي للذكر المحدد
     setTotalCounts(prevCounts => ({
@@ -110,12 +165,12 @@ const App = () => {
   };
 
   /**
-   * إعادة تعيين العداد الحالي فقط
+   * إعادة تعيين العداد الحالي فقط للذكر المحدد
    */
   const resetCurrentCounter = () => {
     Alert.alert(
       'إعادة تعيين العداد',
-      'هل تريد إعادة تعيين العداد الحالي؟',
+      'هل تريد إعادة تعيين العداد الحالي لـ ' + selectedDhikr + '؟',
       [
         {
           text: 'إلغاء',
@@ -123,7 +178,12 @@ const App = () => {
         },
         {
           text: 'إعادة تعيين',
-          onPress: () => setCurrentCount(0),
+          onPress: () => {
+            setCurrentCounts(prevCounts => ({
+              ...prevCounts,
+              [selectedDhikr]: 0,
+            }));
+          },
           style: 'destructive',
         },
       ],
@@ -150,7 +210,7 @@ const App = () => {
               resetCounts[dhikr] = 0;
             });
             setTotalCounts(resetCounts);
-            setCurrentCount(0);
+            setCurrentCounts(resetCounts);
             Alert.alert('تم', 'تم مسح جميع البيانات بنجاح');
           },
           style: 'destructive',
@@ -164,7 +224,7 @@ const App = () => {
    */
   const handleDhikrChange = (dhikr) => {
     setSelectedDhikr(dhikr);
-    setCurrentCount(0); // إعادة تعيين العداد الحالي عند تغيير الذكر
+    // لا حاجة لإعادة تعيين العداد - كل ذكر يحفظ عداده الخاص
   };
 
   return (
