@@ -661,19 +661,18 @@ const App = () => {
           <View style={styles.headerTitleRow}>
             {Platform.OS === 'web' ? (
               <img 
-                src="prayer-icon.svg" 
+                src="app-prayer.png" 
                 alt="ADHKAR" 
                 style={{
                   width: 40,
                   height: 40,
                   marginRight: isRTL ? 0 : 12,
                   marginLeft: isRTL ? 12 : 0,
-                  filter: 'brightness(0) invert(1)',
                 }}
               />
             ) : (
               <Image 
-                source={require('./public/prayer-icon.svg')}
+                source={require('./public/app-prayer.png')}
                 style={styles.headerIcon}
               />
             )}
@@ -724,7 +723,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     marginRight: 12,
-    tintColor: '#ffffff',
   },
   headerTitle: {
     fontSize: SCREEN_WIDTH < 360 ? 26 : 32,

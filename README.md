@@ -2,7 +2,7 @@
 
 تطبيق إسلامي بسيط وسهل الاستخدام لعد الأذكار والتسبيحات اليومية، مبني باستخدام React Native.
 
-![ADHKAR Icon](https://wagrmmbkukwblfpfxxcb.supabase.co/storage/v1/object/public/web-img/prayer-icon.svg)
+![ADHKAR Icon](https://wagrmmbkukwblfpfxxcb.supabase.co/storage/v1/object/public/web-img/app-prayer.png)
 
 ## ✨ المميزات
 
