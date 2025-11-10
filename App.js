@@ -748,9 +748,6 @@ const App = () => {
               {t.appTitle}
             </Text>
           </View>
-          <Text style={[styles.headerSubtitle, isRTL && styles.textRTL]}>
-            {t.appSubtitle}
-          </Text>
         </View>
       </Animated.View>
 
