@@ -661,18 +661,19 @@ const App = () => {
           <View style={styles.headerTitleRow}>
             {Platform.OS === 'web' ? (
               <img 
-                src="app-prayer.png" 
+                src="prayer-icon.svg" 
                 alt="ADHKAR" 
                 style={{
                   width: 40,
                   height: 40,
                   marginRight: isRTL ? 0 : 12,
                   marginLeft: isRTL ? 12 : 0,
+                  filter: 'brightness(0) invert(1)',
                 }}
               />
             ) : (
               <Image 
-                source={require('./public/app-prayer.png')}
+                source={require('./public/prayer-icon.svg')}
                 style={styles.headerIcon}
               />
             )}
