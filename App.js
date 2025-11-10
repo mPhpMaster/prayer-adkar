@@ -38,6 +38,8 @@ const ADHKAR_LIST = [
 const STORAGE_KEY_TOTALS = '@dhikr_counter_totals';
 const STORAGE_KEY_CURRENT = '@dhikr_counter_current';
 const STORAGE_KEY_SELECTED = '@dhikr_counter_selected';
+const STORAGE_KEY_STATS = '@dhikr_counter_statistics';
+const STORAGE_KEY_DAILY_HISTORY = '@dhikr_counter_daily_history';
 
 const App = () => {
   // الذكر المختار حالياً
@@ -63,6 +65,20 @@ const App = () => {
   
   // العداد الحالي للذكر المختار
   const currentCount = currentCounts[selectedDhikr] || 0;
+  
+  // إحصائيات متقدمة
+  const [statistics, setStatistics] = useState({
+    firstUseDate: new Date().toISOString(),
+    totalDays: 0,
+    currentStreak: 0,
+    longestStreak: 0,
+    lastUsedDate: new Date().toISOString(),
+    bestDayCount: 0,
+    bestDayDate: null,
+  });
+  
+  // سجل الأيام - يحفظ العدد لكل يوم
+  const [dailyHistory, setDailyHistory] = useState([]);
 
   /**
    * تحميل البيانات المحفوظة عند بدء التطبيق
@@ -112,6 +128,20 @@ const App = () => {
           setSelectedDhikr(loadedSelected);
         }
       }
+      
+      // تحميل الإحصائيات المتقدمة
+      const statsJson = await AsyncStorage.getItem(STORAGE_KEY_STATS);
+      if (statsJson != null) {
+        const loadedStats = JSON.parse(statsJson);
+        setStatistics(loadedStats);
+      }
+      
+      // تحميل سجل الأيام
+      const historyJson = await AsyncStorage.getItem(STORAGE_KEY_DAILY_HISTORY);
+      if (historyJson != null) {
+        const loadedHistory = JSON.parse(historyJson);
+        setDailyHistory(loadedHistory);
+      }
     } catch (error) {
       console.error('خطأ في تحميل البيانات:', error);
       Alert.alert('خطأ', 'حدث خطأ أثناء تحميل البيانات المحفوظة');
@@ -130,6 +160,14 @@ const App = () => {
       // حفظ العدادات الحالية
       const currentJson = JSON.stringify(currentCounts);
       await AsyncStorage.setItem(STORAGE_KEY_CURRENT, currentJson);
+      
+      // حفظ الإحصائيات
+      const statsJson = JSON.stringify(statistics);
+      await AsyncStorage.setItem(STORAGE_KEY_STATS, statsJson);
+      
+      // حفظ سجل الأيام
+      const historyJson = JSON.stringify(dailyHistory);
+      await AsyncStorage.setItem(STORAGE_KEY_DAILY_HISTORY, historyJson);
     } catch (error) {
       console.error('خطأ في حفظ البيانات:', error);
     }
@@ -162,6 +200,95 @@ const App = () => {
       ...prevCounts,
       [selectedDhikr]: prevCounts[selectedDhikr] + 1,
     }));
+    
+    // تحديث الإحصائيات
+    updateStatistics();
+  };
+  
+  /**
+   * تحديث الإحصائيات المتقدمة
+   */
+  const updateStatistics = () => {
+    const today = new Date().toISOString().split('T')[0];
+    const lastDate = statistics.lastUsedDate ? new Date(statistics.lastUsedDate).toISOString().split('T')[0] : null;
+    
+    // تحديث تاريخ آخر استخدام
+    const updatedStats = {
+      ...statistics,
+      lastUsedDate: new Date().toISOString(),
+    };
+    
+    // حساب السلاسل المتتالية
+    if (lastDate) {
+      const daysDiff = Math.floor((new Date(today) - new Date(lastDate)) / (1000 * 60 * 60 * 24));
+      
+      if (daysDiff === 0) {
+        // نفس اليوم - لا تغيير في السلسلة
+      } else if (daysDiff === 1) {
+        // يوم متتالي - زيادة السلسلة
+        updatedStats.currentStreak = statistics.currentStreak + 1;
+        if (updatedStats.currentStreak > statistics.longestStreak) {
+          updatedStats.longestStreak = updatedStats.currentStreak;
+        }
+      } else {
+        // انقطاع - إعادة تعيين السلسلة
+        updatedStats.currentStreak = 1;
+      }
+    } else {
+      // أول استخدام
+      updatedStats.currentStreak = 1;
+      updatedStats.longestStreak = 1;
+    }
+    
+    setStatistics(updatedStats);
+    
+    // تحديث سجل الأيام
+    updateDailyHistory(today);
+  };
+  
+  /**
+   * تحديث سجل الأيام
+   */
+  const updateDailyHistory = (today) => {
+    setDailyHistory(prevHistory => {
+      // البحث عن سجل اليوم
+      const todayIndex = prevHistory.findIndex(entry => entry.date === today);
+      
+      // حساب إجمالي اليوم
+      const todayTotal = Object.values(currentCounts).reduce((sum, count) => sum + count, 0) + 1;
+      
+      if (todayIndex >= 0) {
+        // تحديث السجل الموجود
+        const updated = [...prevHistory];
+        updated[todayIndex] = {
+          date: today,
+          count: todayTotal,
+        };
+        return updated;
+      } else {
+        // إضافة سجل جديد
+        const newHistory = [
+          ...prevHistory,
+          {
+            date: today,
+            count: todayTotal,
+          }
+        ];
+        
+        // الاحتفاظ بآخر 30 يوم فقط
+        return newHistory.slice(-30);
+      }
+    });
+    
+    // تحديث أفضل يوم
+    const todayTotal = Object.values(currentCounts).reduce((sum, count) => sum + count, 0) + 1;
+    if (todayTotal > statistics.bestDayCount) {
+      setStatistics(prev => ({
+        ...prev,
+        bestDayCount: todayTotal,
+        bestDayDate: today,
+      }));
+    }
   };
 
   /**
@@ -274,11 +401,25 @@ const App = () => {
       }
     });
     
+    // حساب المتوسط اليومي
+    const firstUse = new Date(statistics.firstUseDate);
+    const today = new Date();
+    const daysSinceStart = Math.max(1, Math.floor((today - firstUse) / (1000 * 60 * 60 * 24)));
+    const dailyAverage = Math.round(totalAll / daysSinceStart);
+    
+    // حساب متوسط آخر 7 أيام
+    const last7Days = dailyHistory.slice(-7);
+    const last7DaysTotal = last7Days.reduce((sum, entry) => sum + entry.count, 0);
+    const weeklyAverage = last7Days.length > 0 ? Math.round(last7DaysTotal / last7Days.length) : 0;
+    
     return {
       totalAll,
       currentAll,
       mostUsedDhikr,
       maxCount,
+      dailyAverage,
+      weeklyAverage,
+      daysSinceStart,
     };
   };
   
@@ -353,8 +494,9 @@ const App = () => {
 
         {/* قسم الإحصائيات */}
         <View style={styles.statisticsContainer}>
-          <Text style={styles.sectionTitle}>📊 الإحصائيات</Text>
+          <Text style={styles.sectionTitle}>📊 الإحصائيات الشاملة</Text>
           
+          {/* إحصائيات الأعداد */}
           <View style={styles.statsGrid}>
             <View style={styles.statCard}>
               <Text style={styles.statValue}>{stats.totalAll}</Text>
@@ -367,6 +509,46 @@ const App = () => {
             </View>
           </View>
           
+          {/* إحصائيات المتوسطات */}
+          <View style={styles.statsGrid}>
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{stats.dailyAverage}</Text>
+              <Text style={styles.statLabel}>المتوسط اليومي</Text>
+            </View>
+            
+            <View style={styles.statCard}>
+              <Text style={styles.statValue}>{stats.weeklyAverage}</Text>
+              <Text style={styles.statLabel}>متوسط آخر 7 أيام</Text>
+            </View>
+          </View>
+          
+          {/* السلاسل المتتالية */}
+          <View style={styles.streakContainer}>
+            <Text style={styles.streakTitle}>🔥 السلاسل المتتالية</Text>
+            <View style={styles.streakRow}>
+              <View style={styles.streakItem}>
+                <Text style={styles.streakValue}>{statistics.currentStreak}</Text>
+                <Text style={styles.streakLabel}>السلسلة الحالية</Text>
+              </View>
+              <View style={styles.streakItem}>
+                <Text style={styles.streakValue}>{statistics.longestStreak}</Text>
+                <Text style={styles.streakLabel}>أطول سلسلة</Text>
+              </View>
+            </View>
+          </View>
+          
+          {/* أفضل يوم */}
+          {statistics.bestDayCount > 0 && (
+            <View style={styles.bestDayCard}>
+              <Text style={styles.bestDayTitle}>⭐ أفضل يوم</Text>
+              <Text style={styles.bestDayCount}>{statistics.bestDayCount} ذكر</Text>
+              {statistics.bestDayDate && (
+                <Text style={styles.bestDayDate}>{statistics.bestDayDate}</Text>
+              )}
+            </View>
+          )}
+          
+          {/* الأكثر استخداماً */}
           {stats.maxCount > 0 && (
             <View style={styles.mostUsedCard}>
               <Text style={styles.mostUsedLabel}>🏆 الأكثر استخداماً</Text>
@@ -374,6 +556,14 @@ const App = () => {
               <Text style={styles.mostUsedCount}>{stats.maxCount} مرة</Text>
             </View>
           )}
+          
+          {/* معلومات إضافية */}
+          <View style={styles.additionalInfoCard}>
+            <Text style={styles.additionalInfoText}>📅 عدد أيام الاستخدام: {stats.daysSinceStart} يوم</Text>
+            {dailyHistory.length > 0 && (
+              <Text style={styles.additionalInfoText}>📈 السجل التاريخي: {dailyHistory.length} يوم</Text>
+            )}
+          </View>
         </View>
 
         {/* عرض الإجماليات */}
@@ -622,6 +812,79 @@ const styles = StyleSheet.create({
   mostUsedCount: {
     fontSize: 18,
     color: '#666',
+  },
+  streakContainer: {
+    backgroundColor: '#ffe0b2',
+    borderRadius: 12,
+    padding: 15,
+    marginTop: 15,
+    borderWidth: 2,
+    borderColor: '#ff9800',
+  },
+  streakTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#e65100',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  streakRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  streakItem: {
+    alignItems: 'center',
+  },
+  streakValue: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#ff6f00',
+    marginBottom: 5,
+  },
+  streakLabel: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+  },
+  bestDayCard: {
+    backgroundColor: '#e1f5fe',
+    borderRadius: 12,
+    padding: 15,
+    alignItems: 'center',
+    marginTop: 15,
+    borderWidth: 2,
+    borderColor: '#0288d1',
+  },
+  bestDayTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#01579b',
+    marginBottom: 8,
+  },
+  bestDayCount: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#0277bd',
+    marginBottom: 5,
+  },
+  bestDayDate: {
+    fontSize: 14,
+    color: '#666',
+  },
+  additionalInfoCard: {
+    backgroundColor: '#f3e5f5',
+    borderRadius: 12,
+    padding: 15,
+    marginTop: 15,
+    borderWidth: 2,
+    borderColor: '#9c27b0',
+  },
+  additionalInfoText: {
+    fontSize: 14,
+    color: '#4a148c',
+    marginBottom: 5,
+    textAlign: 'center',
+    fontWeight: '600',
   },
   totalsContainer: {
     backgroundColor: '#ffffff',
