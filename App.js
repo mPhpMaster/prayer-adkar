@@ -392,7 +392,7 @@ const App = () => {
     <View>
       <ScrollView
         horizontal
-        showsHorizontalScrollIndicator={true}
+        showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.languageSelectorScroll}
         style={styles.languageSelectorContainer}
       >
@@ -495,7 +495,7 @@ const App = () => {
         </Text>
         <ScrollView
           horizontal
-          showsHorizontalScrollIndicator={true}
+          showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.dhikrScrollContainer}
           style={styles.dhikrScrollView}
         >
@@ -538,7 +538,7 @@ const App = () => {
     <ScrollView 
       style={styles.scrollView}
       contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={true}
+      showsVerticalScrollIndicator={false}
       scrollEnabled={true}
       nestedScrollEnabled={true}
     >

@@ -325,6 +325,16 @@ a {
   cursor: pointer;
 }
 
+/* Hide scrollbars but allow scrolling */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+*::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .moon {
