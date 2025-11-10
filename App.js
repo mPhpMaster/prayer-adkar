@@ -444,13 +444,18 @@ const App = () => {
       );
     }
     
-    // Mobile: Vertical list
+    // Mobile: Horizontal scroll
     return (
       <Animated.View style={[styles.selectionContainer, {opacity: fadeAnim}]}>
         <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>
-          📿 {t.selectDhikr}
+          {t.selectDhikr}
         </Text>
-        <View style={styles.dhikrMobileContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={true}
+          contentContainerStyle={styles.dhikrScrollContainer}
+          style={styles.dhikrScrollView}
+        >
           {ADHKAR_KEYS.map((key) => (
             <TouchableOpacity
               key={key}
@@ -478,7 +483,7 @@ const App = () => {
               )}
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
       </Animated.View>
     );
   };
@@ -920,17 +925,22 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     position: 'relative',
   },
-  // Mobile: Vertical list
-  dhikrMobileContainer: {
+  // Mobile: Horizontal scroll
+  dhikrScrollView: {
+    flexGrow: 0,
+  },
+  dhikrScrollContainer: {
+    paddingVertical: 10,
+    paddingHorizontal: 5,
     gap: 12,
   },
   dhikrCardMobile: {
-    width: '100%',
-    minHeight: 80,
+    width: SCREEN_WIDTH < 360 ? 140 : 160,
+    height: 100,
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 20,
     padding: 16,
-    marginBottom: 12,
+    marginRight: 12,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
