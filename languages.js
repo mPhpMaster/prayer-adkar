@@ -8,16 +8,19 @@ export const LANGUAGES = {
     code: 'ar',
     name: 'العربية',
     dir: 'rtl',
+    order: 1,
   },
   en: {
     code: 'en',
     name: 'English',
     dir: 'ltr',
+    order: 2,
   },
   th: {
     code: 'th',
     name: 'ไทย',
     dir: 'ltr',
+    order: 3,
   },
 };
 

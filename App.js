@@ -353,7 +353,7 @@ const App = () => {
   const renderLanguageSelector = () => (
     <View>
       <View style={styles.languageSelector}>
-        {Object.values(LANGUAGES).map((lang) => (
+        {Object.values(LANGUAGES).sort((a, b) => a.order - b.order).map((lang) => (
           <TouchableOpacity
             key={lang.code}
             style={[
@@ -409,7 +409,7 @@ const App = () => {
       return (
         <Animated.View style={[styles.selectionContainer, {opacity: fadeAnim}]}>
           <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>
-            📿 {t.selectDhikr}
+            {t.selectDhikr}
           </Text>
           <View style={styles.dhikrGridContainer}>
             {ADHKAR_KEYS.map((key) => (
@@ -503,7 +503,7 @@ const App = () => {
       {/* عرض الذكر المختار */}
       <Animated.View style={[styles.dhikrDisplayContainer, {opacity: fadeAnim, transform: [{scale: fadeAnim}]}]}>
         <Text style={[styles.dhikrText, isRTL && styles.textRTL]}>
-          🌙 {t[selectedDhikr]} 🌙
+          {t[selectedDhikr]}
         </Text>
       </Animated.View>
 
@@ -532,7 +532,7 @@ const App = () => {
             },
           ]} />
           <Text style={[styles.mainButtonText, isRTL && styles.textRTL]}>
-            {t.mainButton} ✨
+            {t.mainButton}
           </Text>
           <Text style={[styles.mainButtonSubtext, isRTL && styles.textRTL]}>
             {t.mainButtonSub}
@@ -550,7 +550,7 @@ const App = () => {
           aria-label="Reset counter"
         >
           <Text style={[styles.resetButtonText, isRTL && styles.textRTL]}>
-            🔄 {t.resetCounter}
+            {t.resetCounter}
           </Text>
         </TouchableOpacity>
         
@@ -562,7 +562,7 @@ const App = () => {
           aria-label="View statistics"
         >
           <Text style={[styles.statsButtonText, isRTL && styles.textRTL]}>
-            📊 {t.viewStatistics}
+            {t.viewStatistics}
           </Text>
         </TouchableOpacity>
       </Animated.View>
@@ -577,7 +577,7 @@ const App = () => {
           aria-label="Clear all data"
         >
           <Text style={[styles.clearButtonText, isRTL && styles.textRTL]}>
-            🗑️ {t.clearAllData}
+            {t.clearAllData}
           </Text>
         </TouchableOpacity>
       </Animated.View>
@@ -609,7 +609,7 @@ const App = () => {
       {/* قسم الإحصائيات */}
       <View style={styles.statisticsContainer}>
         <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>
-          📊 {t.statistics}
+          {t.statistics}
         </Text>
         
         <View style={styles.statsGrid}>
@@ -631,7 +631,7 @@ const App = () => {
         {stats.maxCount > 0 && (
           <View style={styles.mostUsedCard}>
             <Text style={[styles.mostUsedLabel, isRTL && styles.textRTL]}>
-              🏆 {t.mostUsed}
+              {t.mostUsed}
             </Text>
             <Text style={[styles.mostUsedDhikr, isRTL && styles.textRTL]}>
               {t[stats.mostUsedDhikr]}
@@ -646,7 +646,7 @@ const App = () => {
       {/* عرض الإجماليات */}
       <View style={styles.totalsContainer}>
         <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>
-          💾 {t.savedTotals}
+          {t.savedTotals}
         </Text>
         {ADHKAR_KEYS.map((key, index) => {
           const total = totalCounts[key] || 0;
@@ -756,10 +756,10 @@ const App = () => {
             {Platform.OS === 'web' ? (
               <div className="moon" style={{
                 position: 'relative',
-                width: '50px',
-                height: '50px',
-                marginRight: isRTL ? '0' : '15px',
-                marginLeft: isRTL ? '15px' : '0',
+                width: '35px',
+                height: '35px',
+                marginRight: isRTL ? '0' : '20px',
+                marginLeft: isRTL ? '20px' : '0',
                 top: '0',
                 right: '0'
               }}></div>
@@ -807,11 +807,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   headerMoon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 35,
+    height: 35,
+    borderRadius: 17.5,
     backgroundColor: '#fff',
-    marginRight: 15,
+    marginRight: 20,
     shadowColor: '#fff',
     shadowOffset: {width: 0, height: 0},
     shadowOpacity: 0.8,
