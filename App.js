@@ -695,9 +695,6 @@ const App = () => {
           {/* Glowing Moon */}
           <div className="moon"></div>
 
-          {/* Crescent Moon */}
-          <div className="crescent"></div>
-
           {/* Sparkles */}
           {[...Array(10)].map((_, i) => (
             <div

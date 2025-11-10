@@ -311,30 +311,6 @@
   100% { left: 100%; }
 }
 
-/* Crescent Moon Shape */
-.crescent {
-  position: fixed;
-  top: 15%;
-  right: 15%;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  box-shadow: 15px 0 0 0 gold;
-  animation: crescent-glow 3s ease-in-out infinite;
-  z-index: 1;
-}
-
-@keyframes crescent-glow {
-  0%, 100% {
-    box-shadow: 15px 0 0 0 gold,
-                0 0 20px rgba(255, 215, 0, 0.3);
-  }
-  50% {
-    box-shadow: 15px 0 0 0 gold,
-                0 0 40px rgba(255, 215, 0, 0.6);
-  }
-}
-
 /* Sparkle Effect */
 .sparkle {
   position: fixed;
