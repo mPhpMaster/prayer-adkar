@@ -67,11 +67,23 @@
 .shooting-star:nth-child(3) { top: 50%; right: 80%; animation-delay: 3s; }
 .shooting-star:nth-child(4) { top: 20%; right: 60%; animation-delay: 4.5s; }
 
+/* Button Hover Effects */
+button, .button, [role="button"] {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+button:hover, .button:hover, [role="button"]:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.2);
+}
+
 /* 3D Card Animations */
 .card-3d {
   transform-style: preserve-3d;
   transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   animation: float 3s ease-in-out infinite;
+  cursor: pointer;
 }
 
 .card-3d:hover {
@@ -268,6 +280,51 @@
   }
 }
 
+/* Interactive Elements Hover */
+div[role="button"], 
+div[class*="button"], 
+div[class*="Button"],
+div[class*="card"],
+div[class*="Card"] {
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease;
+}
+
+div[role="button"]:hover, 
+div[class*="button"]:hover, 
+div[class*="Button"]:hover {
+  transform: scale(1.05) translateY(-3px);
+  filter: brightness(1.15);
+  box-shadow: 0 8px 25px rgba(77, 208, 225, 0.5);
+}
+
+div[class*="card"]:hover,
+div[class*="Card"]:hover {
+  transform: scale(1.03) translateY(-2px);
+  box-shadow: 0 6px 20px rgba(77, 208, 225, 0.4);
+}
+
+/* Main Counter Button Hover */
+div[class*="mainButton"]:hover {
+  transform: scale(1.08) translateY(-5px);
+  box-shadow: 0 12px 35px rgba(77, 208, 225, 0.6),
+              0 0 30px rgba(77, 208, 225, 0.4);
+  filter: brightness(1.2);
+}
+
+/* Language Button Hover */
+div[class*="language"]:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 15px rgba(77, 208, 225, 0.5);
+}
+
+/* Cursor pointer for all touchable */
+div[data-touchable="true"],
+div[aria-label],
+a {
+  cursor: pointer;
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .moon {
@@ -275,5 +332,12 @@
     height: 50px;
     top: 8%;
     right: 8%;
+  }
+  
+  /* Reduce hover effects on mobile */
+  div[role="button"]:hover, 
+  div[class*="button"]:hover, 
+  div[class*="Button"]:hover {
+    transform: scale(1.02) translateY(-1px);
   }
 }

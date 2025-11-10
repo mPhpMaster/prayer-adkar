@@ -521,6 +521,8 @@ const App = () => {
           style={styles.mainButton}
           onPress={incrementCounter}
           activeOpacity={0.8}
+          role="button"
+          aria-label="Increment counter"
         >
           <Animated.View style={[
             styles.rippleCircle,
@@ -544,6 +546,8 @@ const App = () => {
           style={styles.resetButton}
           onPress={resetCurrentCounter}
           activeOpacity={0.8}
+          role="button"
+          aria-label="Reset counter"
         >
           <Text style={[styles.resetButtonText, isRTL && styles.textRTL]}>
             🔄 {t.resetCounter}
@@ -554,6 +558,8 @@ const App = () => {
           style={styles.statsButton}
           onPress={() => setCurrentView('statistics')}
           activeOpacity={0.8}
+          role="button"
+          aria-label="View statistics"
         >
           <Text style={[styles.statsButtonText, isRTL && styles.textRTL]}>
             📊 {t.viewStatistics}
@@ -567,6 +573,8 @@ const App = () => {
           style={styles.clearButton}
           onPress={clearAllData}
           activeOpacity={0.8}
+          role="button"
+          aria-label="Clear all data"
         >
           <Text style={[styles.clearButtonText, isRTL && styles.textRTL]}>
             🗑️ {t.clearAllData}
