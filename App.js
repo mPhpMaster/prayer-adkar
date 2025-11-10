@@ -190,6 +190,9 @@ const App = () => {
    * زيادة العداد عند الضغط على الزر
    */
   const incrementCounter = () => {
+    // Play sound effect
+    playCounterSound();
+    
     // Button press animation
     Animated.sequence([
       Animated.timing(buttonScaleAnim, {
@@ -346,6 +349,41 @@ const App = () => {
     inputRange: [0, 0.5, 1],
     outputRange: [0.6, 0.3, 0],
   });
+
+  /**
+   * Play counter sound effect
+   */
+  const playCounterSound = () => {
+    if (Platform.OS === 'web') {
+      try {
+        // Create audio context
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Create oscillator for a pleasant beep sound
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        // Connect nodes
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        // Configure sound - pleasant "ding" sound
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // Higher frequency
+        oscillator.type = 'sine'; // Smooth sine wave
+        
+        // Envelope for smooth sound
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        
+        // Play sound
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
+      } catch (error) {
+        console.log('Sound playback not supported');
+      }
+    }
+  };
 
   /**
    * Render language selector
