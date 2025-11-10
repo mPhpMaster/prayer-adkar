@@ -389,7 +389,7 @@ const App = () => {
    * Render language selector
    */
   const renderLanguageSelector = () => (
-    <View>
+    <View style={styles.languageSelectorWrapper}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -894,9 +894,13 @@ const styles = StyleSheet.create({
   },
   
   // Language Selector
+  languageSelectorWrapper: {
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   languageSelectorContainer: {
     flexGrow: 0,
-    marginBottom: 16,
   },
   languageSelectorScroll: {
     paddingVertical: 5,
