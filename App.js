@@ -759,17 +759,22 @@ const App = () => {
         <View style={styles.headerContent}>
           <View style={styles.headerTitleRow}>
             {Platform.OS === 'web' ? (
-              <div className="moon" style={{
-                position: 'relative',
-                width: '35px',
-                height: '35px',
-                marginRight: isRTL ? '0' : '20px',
-                marginLeft: isRTL ? '20px' : '0',
-                top: '0',
-                right: '0'
-              }}></div>
+              <img 
+                src="adhkar-icon.svg" 
+                alt="ADHKAR" 
+                style={{
+                  width: '35px',
+                  height: '35px',
+                  marginRight: isRTL ? '0' : '20px',
+                  marginLeft: isRTL ? '20px' : '0',
+                  filter: 'brightness(0) invert(1)',
+                }}
+              />
             ) : (
-              <View style={styles.headerMoon} />
+              <Image 
+                source={require('./public/adhkar-icon.svg')}
+                style={styles.headerIcon}
+              />
             )}
             <Text style={[styles.headerTitle, isRTL && styles.textRTL]}>
               {t.appTitle}
@@ -811,16 +816,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 8,
   },
-  headerMoon: {
+  headerIcon: {
     width: 35,
     height: 35,
-    borderRadius: 17.5,
-    backgroundColor: '#fff',
     marginRight: 20,
-    shadowColor: '#fff',
-    shadowOffset: {width: 0, height: 0},
-    shadowOpacity: 0.8,
-    shadowRadius: 15,
   },
   headerTitle: {
     fontSize: SCREEN_WIDTH < 360 ? 26 : 32,

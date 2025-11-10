@@ -7,7 +7,7 @@ const distDir = path.join(__dirname, 'dist');
 
 // Files to copy
 const filesToCopy = [
-  'prayer-icon.svg',
+  'adhkar-icon.svg',
   'manifest.json',
   'islamic-theme.css'
 ];
