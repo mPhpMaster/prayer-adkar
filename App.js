@@ -692,9 +692,6 @@ const App = () => {
             />
           ))}
 
-          {/* Glowing Moon */}
-          <div className="moon"></div>
-
           {/* Sparkles */}
           {[...Array(10)].map((_, i) => (
             <div
@@ -733,9 +730,24 @@ const App = () => {
       {/* شريط العنوان */}
       <Animated.View style={[styles.header, {opacity: fadeAnim}]}>
         <View style={styles.headerContent}>
-          <Text style={[styles.headerTitle, isRTL && styles.textRTL]}>
-            {t.appTitle}
-          </Text>
+          <View style={styles.headerTitleRow}>
+            {Platform.OS === 'web' ? (
+              <div className="moon" style={{
+                position: 'relative',
+                width: '50px',
+                height: '50px',
+                marginRight: isRTL ? '0' : '15px',
+                marginLeft: isRTL ? '15px' : '0',
+                top: '0',
+                right: '0'
+              }}></div>
+            ) : (
+              <View style={styles.headerMoon} />
+            )}
+            <Text style={[styles.headerTitle, isRTL && styles.textRTL]}>
+              {t.appTitle}
+            </Text>
+          </View>
           <Text style={[styles.headerSubtitle, isRTL && styles.textRTL]}>
             {t.appSubtitle}
           </Text>
@@ -768,6 +780,23 @@ const styles = StyleSheet.create({
   },
   headerContent: {
     alignItems: 'center',
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  headerMoon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#fff',
+    marginRight: 15,
+    shadowColor: '#fff',
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.8,
+    shadowRadius: 15,
   },
   headerTitle: {
     fontSize: SCREEN_WIDTH < 360 ? 26 : 32,
