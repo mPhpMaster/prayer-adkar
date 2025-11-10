@@ -67,72 +67,6 @@
 .shooting-star:nth-child(3) { top: 50%; right: 80%; animation-delay: 3s; }
 .shooting-star:nth-child(4) { top: 20%; right: 60%; animation-delay: 4.5s; }
 
-/* Mosque Silhouette */
-.mosque-silhouette {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 200px;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
-  z-index: 1;
-  pointer-events: none;
-}
-
-.mosque-dome {
-  position: absolute;
-  bottom: 60px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100px;
-  height: 80px;
-  background: rgba(0, 0, 0, 0.6);
-  border-radius: 50% 50% 0 0;
-  border-top: 3px solid rgba(255, 215, 0, 0.5);
-}
-
-.mosque-dome::before {
-  content: '';
-  position: absolute;
-  top: -20px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 10px;
-  height: 30px;
-  background: linear-gradient(to bottom, gold, rgba(255, 215, 0, 0.5));
-  border-radius: 5px;
-}
-
-.mosque-minaret {
-  position: absolute;
-  bottom: 60px;
-  width: 30px;
-  height: 120px;
-  background: rgba(0, 0, 0, 0.7);
-  border-top: 3px solid rgba(255, 215, 0, 0.5);
-}
-
-.mosque-minaret-left {
-  left: calc(50% - 120px);
-}
-
-.mosque-minaret-right {
-  right: calc(50% - 120px);
-}
-
-.mosque-minaret::after {
-  content: '';
-  position: absolute;
-  top: -15px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 20px;
-  height: 20px;
-  background: rgba(0, 0, 0, 0.7);
-  border-radius: 50%;
-  border: 2px solid rgba(255, 215, 0, 0.5);
-}
-
 /* 3D Card Animations */
 .card-3d {
   transform-style: preserve-3d;
@@ -341,23 +275,5 @@
     height: 50px;
     top: 8%;
     right: 8%;
-  }
-  
-  .mosque-dome {
-    width: 60px;
-    height: 50px;
-  }
-  
-  .mosque-minaret {
-    width: 20px;
-    height: 80px;
-  }
-  
-  .mosque-minaret-left {
-    left: calc(50% - 70px);
-  }
-  
-  .mosque-minaret-right {
-    right: calc(50% - 70px);
   }
 }

@@ -351,27 +351,50 @@ const App = () => {
    * Render language selector
    */
   const renderLanguageSelector = () => (
-    <View style={styles.languageSelector}>
-      {Object.values(LANGUAGES).map((lang) => (
-        <TouchableOpacity
-          key={lang.code}
-          style={[
-            styles.languageButton,
-            language === lang.code && styles.languageButtonActive,
-          ]}
-          onPress={() => changeLanguage(lang.code)}
-          activeOpacity={0.7}
-        >
-          <Text
+    <View>
+      <View style={styles.languageSelector}>
+        {Object.values(LANGUAGES).map((lang) => (
+          <TouchableOpacity
+            key={lang.code}
             style={[
-              styles.languageButtonText,
-              language === lang.code && styles.languageButtonTextActive,
+              styles.languageButton,
+              language === lang.code && styles.languageButtonActive,
             ]}
+            onPress={() => changeLanguage(lang.code)}
+            activeOpacity={0.7}
           >
-            {lang.name}
-          </Text>
-        </TouchableOpacity>
-      ))}
+            <Text
+              style={[
+                styles.languageButtonText,
+                language === lang.code && styles.languageButtonTextActive,
+              ]}
+            >
+              {lang.name}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      {/* Mosque Image */}
+      {Platform.OS === 'web' ? (
+        <img 
+          src="https://wagrmmbkukwblfpfxxcb.supabase.co/storage/v1/object/public/web-img/islamic-arabic-blue-shape-of-masjid-mosque-vector-11642573201guxqvuqnod-removebg-preview.png"
+          alt="Mosque"
+          style={{
+            width: '100%',
+            maxWidth: '400px',
+            height: 'auto',
+            display: 'block',
+            margin: '0 auto 16px auto',
+            opacity: 0.8
+          }}
+        />
+      ) : (
+        <Image 
+          source={{uri: 'https://wagrmmbkukwblfpfxxcb.supabase.co/storage/v1/object/public/web-img/islamic-arabic-blue-shape-of-masjid-mosque-vector-11642573201guxqvuqnod-removebg-preview.png'}}
+          style={styles.mosqueImage}
+          resizeMode="contain"
+        />
+      )}
     </View>
   );
 
@@ -707,13 +730,6 @@ const App = () => {
 
           {/* Islamic Pattern Overlay */}
           <div className="islamic-pattern"></div>
-
-          {/* Mosque Silhouette */}
-          <div className="mosque-silhouette">
-            <div className="mosque-dome"></div>
-            <div className="mosque-minaret mosque-minaret-left"></div>
-            <div className="mosque-minaret mosque-minaret-right"></div>
-          </div>
         </div>
       );
     }
@@ -849,6 +865,13 @@ const styles = StyleSheet.create({
   },
   languageButtonTextActive: {
     color: '#ffffff',
+  },
+  mosqueImage: {
+    width: '100%',
+    maxWidth: 400,
+    height: 150,
+    marginBottom: 16,
+    opacity: 0.8,
   },
   
   // Dhikr Selection
