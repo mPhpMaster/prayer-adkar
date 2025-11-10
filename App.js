@@ -352,7 +352,12 @@ const App = () => {
    */
   const renderLanguageSelector = () => (
     <View>
-      <View style={styles.languageSelector}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={true}
+        contentContainerStyle={styles.languageSelectorScroll}
+        style={styles.languageSelectorContainer}
+      >
         {Object.values(LANGUAGES).sort((a, b) => a.order - b.order).map((lang) => (
           <TouchableOpacity
             key={lang.code}
@@ -373,7 +378,7 @@ const App = () => {
             </Text>
           </TouchableOpacity>
         ))}
-      </View>
+      </ScrollView>
       {/* Mosque Image */}
       {Platform.OS === 'web' ? (
         <img 
@@ -851,10 +856,13 @@ const styles = StyleSheet.create({
   },
   
   // Language Selector
-  languageSelector: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+  languageSelectorContainer: {
+    flexGrow: 0,
     marginBottom: 16,
+  },
+  languageSelectorScroll: {
+    paddingVertical: 5,
+    paddingHorizontal: 10,
     gap: 10,
   },
   languageButton: {
@@ -864,6 +872,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderWidth: 2,
     borderColor: 'rgba(77, 208, 225, 0.3)',
+    marginRight: 10,
   },
   languageButtonActive: {
     backgroundColor: 'rgba(77, 208, 225, 0.3)',
