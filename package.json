@@ -9,8 +9,8 @@
     "start": "react-native start",
     "test": "jest",
     "lint": "eslint .",
-    "export:web": "expo export -p web",
-    "build": "expo export -p web"
+    "export:web": "npx expo export --platform web --output-dir dist",
+    "build": "npx expo export --platform web --output-dir dist"
   },
   "keywords": [
     "dhikr",
