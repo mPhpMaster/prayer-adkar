@@ -494,7 +494,9 @@ const App = () => {
     <ScrollView 
       style={styles.scrollView}
       contentContainerStyle={styles.scrollContent}
-      showsVerticalScrollIndicator={false}
+      showsVerticalScrollIndicator={true}
+      scrollEnabled={true}
+      nestedScrollEnabled={true}
     >
       {/* Language Selector */}
       {renderLanguageSelector()}
@@ -836,7 +838,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: SCREEN_WIDTH < 360 ? 15 : 20,
-    paddingBottom: 40,
+    paddingBottom: 100,
+    flexGrow: 1,
   },
   
   // Language Selector
