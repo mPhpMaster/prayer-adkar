@@ -4,12 +4,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes, viewport-fit=cover" />
     <meta name="theme-color" content="#0a7e8c" />
-    <meta name="description" content="تطبيق عداد الأذكار والتسبيح - احفظ أورادك اليومية بسهولة | Beautiful Dhikr Counter App" />
-    <meta name="keywords" content="أذكار, تسبيح, dhikr, tasbih, islamic, prayer counter" />
+    <meta name="description" content="ADHKAR - أذكار | تطبيق عداد الأذكار والتسبيح - احفظ أورادك اليومية بسهولة" />
+    <meta name="keywords" content="ADHKAR, أذكار, تسبيح, dhikr, tasbih, islamic, prayer counter, adhkar app" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <title>✨ عداد الأذكار - Dhikr Counter</title>
+    <link rel="icon" type="image/svg+xml" href="prayer-icon.svg" />
+    <link rel="apple-touch-icon" href="prayer-icon.svg" />
+    <link rel="manifest" href="manifest.json" />
+    <title>ADHKAR - أذكار</title>
     <style>
         * {
             margin: 0;
@@ -68,6 +71,13 @@
             font-size: 18px;
             font-weight: 600;
             animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        .loading-icon {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
         }
         
         @keyframes spin {
@@ -130,8 +140,10 @@
     </noscript>
     <div id="root">
         <div class="loading">
+            <img src="prayer-icon.svg" alt="ADHKAR" class="loading-icon" />
             <div class="spinner"></div>
-            <div class="loading-text">✨ جاري التحميل...</div>
+            <div class="loading-text">ADHKAR - أذكار</div>
+            <div class="loading-text" style="font-size: 14px; margin-top: 5px;">✨ جاري التحميل...</div>
         </div>
     </div>
 </body>

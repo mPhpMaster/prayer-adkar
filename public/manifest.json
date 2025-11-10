@@ -1,0 +1,21 @@
+{
+  "name": "ADHKAR - أذكار",
+  "short_name": "ADHKAR",
+  "description": "تطبيق عداد الأذكار والتسبيح - Keep track of your daily prayers",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a7e8c",
+  "theme_color": "#0a7e8c",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "prayer-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["lifestyle", "productivity", "health"],
+  "lang": "ar",
+  "dir": "rtl"
+}

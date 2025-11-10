@@ -611,12 +611,14 @@ const App = () => {
       
       {/* شريط العنوان */}
       <Animated.View style={[styles.header, {opacity: fadeAnim}]}>
-        <Text style={[styles.headerTitle, isRTL && styles.textRTL]}>
-          ✨ {t.appTitle}
-        </Text>
-        <Text style={[styles.headerSubtitle, isRTL && styles.textRTL]}>
-          {t.appSubtitle}
-        </Text>
+        <View style={styles.headerContent}>
+          <Text style={[styles.headerTitle, isRTL && styles.textRTL]}>
+            {t.appTitle}
+          </Text>
+          <Text style={[styles.headerSubtitle, isRTL && styles.textRTL]}>
+            {t.appSubtitle}
+          </Text>
+        </View>
       </Animated.View>
 
       {currentView === 'counter' ? renderCounterView() : renderStatisticsView()}
@@ -643,13 +645,19 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
   },
+  headerContent: {
+    alignItems: 'center',
+  },
   headerTitle: {
-    fontSize: SCREEN_WIDTH < 360 ? 24 : 30,
+    fontSize: SCREEN_WIDTH < 360 ? 26 : 32,
     fontWeight: 'bold',
     color: '#ffffff',
     textAlign: 'center',
     marginBottom: 8,
-    letterSpacing: 0.5,
+    letterSpacing: 1,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: {width: 0, height: 2},
+    textShadowRadius: 4,
   },
   headerSubtitle: {
     fontSize: SCREEN_WIDTH < 360 ? 14 : 16,

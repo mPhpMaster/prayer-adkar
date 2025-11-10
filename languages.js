@@ -24,7 +24,7 @@ export const LANGUAGES = {
 export const TRANSLATIONS = {
   ar: {
     // Header
-    appTitle: 'عداد الأذكار والتسبيح',
+    appTitle: 'ADHKAR - أذكار',
     appSubtitle: 'احفظ أورادك اليومية بسهولة',
     
     // Dhikr selection
@@ -79,7 +79,7 @@ export const TRANSLATIONS = {
   
   en: {
     // Header
-    appTitle: 'Dhikr Counter',
+    appTitle: 'ADHKAR',
     appSubtitle: 'Keep track of your daily prayers',
     
     // Dhikr selection
@@ -134,7 +134,7 @@ export const TRANSLATIONS = {
   
   th: {
     // Header
-    appTitle: 'เครื่องนับซิกร์',
+    appTitle: 'ADHKAR - อัซการ์',
     appSubtitle: 'บันทึกการภาวนาประจำวันของคุณ',
     
     // Dhikr selection

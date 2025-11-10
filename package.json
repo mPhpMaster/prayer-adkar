@@ -1,7 +1,7 @@
 {
-  "name": "dhikr-counter",
+  "name": "adhkar",
   "version": "1.0.0",
-  "description": "تطبيق عداد الأذكار والتسبيح - Dhikr Counter App",
+  "description": "ADHKAR - أذكار | تطبيق عداد الأذكار والتسبيح",
   "main": "index.js",
   "scripts": {
     "start": "webpack serve --mode development --open",
