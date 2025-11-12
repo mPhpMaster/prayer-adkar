@@ -1,11 +1,11 @@
 {
-  "name": "dhikr-counter",
+  "name": "adhkar",
   "version": "1.0.0",
-  "description": "تطبيق عداد الأذكار والتسبيح - Dhikr Counter App",
+  "description": "ADHKAR - أذكار | تطبيق عداد الأذكار والتسبيح",
   "main": "index.js",
   "scripts": {
     "start": "webpack serve --mode development --open",
-    "build": "webpack --mode production",
+    "build": "webpack --mode production && node copy-assets.js",
     "test": "jest",
     "lint": "eslint .",
     "android": "react-native run-android",
@@ -25,7 +25,8 @@
     "@react-native-picker/picker": "^2.11.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-native-web": "^0.19.10"
+    "react-native-web": "^0.19.10",
+    "sweetalert2": "^11.26.3"
   },
   "devDependencies": {
     "@babel/core": "^7.23.0",
